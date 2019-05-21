@@ -6,7 +6,7 @@ The Scheme Widget Library (SWL) is no longer being maintained by Indiana Univers
 
 I upload it in here for the reasons below:
 
-1. Protect its source code lost in the further.
+1. Protect its source code will not lost in the further.
 
 2. Maintaining as much as I can, if I could.
 
