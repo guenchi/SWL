@@ -8,9 +8,9 @@ I upload it in here for the reasons below:
 
 1. Protect its source code lost in the further.
 
-2. Read the source code will help to study the GUI binding and implentation of OOP system in Chez Scheme.
+2. Maintaining as much as I can, if I could.
 
-3. Maintaining as much as I can, if I could.
+3. Read the source code will help to study the GUI binding and implentation of OOP system in Chez Scheme.
 
 
 The Scheme Widget Library (SWL) is a windowing and graphics package for Chez Scheme developed in the Indiana University Computer Science Department with support from the National Science Foundation and Cadence Research Systems. It includes an object system for Scheme, a threaded windowing and graphics library, and various tools, including a window-based REPL (read-eval-print loop) window, a simple editor, a source-file viewer, and a document viewer. See the reference manual for more information on the windowing and graphics library.
