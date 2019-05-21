@@ -1,0 +1,17 @@
+
+Menubar menu entry problems:
+  Unix
+    - motion events and keyboard traversal could leave menu posted
+    - keyboard traversal didn't skip non-existent entry 0
+    - draws oversized checkbutton / radiobutton indicators
+    - fails to invoke command / checkbutton / radiobutton in menubar
+  Windows
+    - does not draw indicator for checkbutton / radiobutton
+    - shows "(Image)" instead of the photo or bitmap given for -image,
+      shows "(Pixmap)" instead of the bitmap supplied for -bitmap.
+      The following excerpt from menu(n) man page implies that images
+      are unsupported only for the system menu:
+
+       "Due to  limitations in the Windows API, any font changes, colors,
+        images, bitmaps, or tearoff images will not appear in the system
+        menu."

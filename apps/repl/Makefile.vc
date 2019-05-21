@@ -1,0 +1,18 @@
+include ..\..\config.make
+
+repl: $(prefix) $(prefix)\swl.heap $(prefix)\repl.so
+
+$(prefix)\repl.so: build-script ..\common\semaphore.ss \
+                   ..\common\scheme-text.ss ..\common\scrollframe.ss \
+                   ..\common\fontmenu.ss ..\common\arrows.ss \
+                   ..\common\select-file.ss ..\common\auxio.ss \
+                   repl-text.ss repl.ss
+	..\..\swl - build-script
+	copy repl.so $(prefix)
+	del repl.so
+
+$(prefix):
+	mkdir $(prefix)
+
+clean:
+	echo $(prefix)\repl.so | $(Scheme) ..\..\nt\rm.ss

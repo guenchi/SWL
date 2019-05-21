@@ -1,0 +1,30 @@
+# Using /usr/local/bin/wish8.0  (Tcl/Tk 8.0.4)
+#  - on Linux (2.0.34) running KDE 1.0, menu is left posted
+#    when kbd traversal moves to another button w/o a menu
+#  - works fine on Windows (menus unpost as expected)
+
+text .txt -width 60 -height 7 -wrap word
+.txt insert insert "(1) post File menu\n(2) release button\n(3) move pointer over Edit menu"
+.txt insert insert "\n\nNext, try keyboard traversal (note that cascades stay posted when you move to BUG)"
+pack .txt
+menu .m
+.m add cascade -label File -menu .m.1
+.m add cascade -label Edit -menu .m.2
+.m add command -label BUG -command {puts stdout "Invoked the menubar menubutton"}
+.m add checkbutton -label Check \
+   -command {puts stdout "the checkbutton was invoked!"} \
+   -variable cbtn
+set cbtn 0
+# no -command for this guy, but make sure he's invoked
+.m add radiobutton -label Radio1 -variable rbtn
+.m add radiobutton -label Radio2 -variable rbtn
+set rbtn 0
+menu .m.1
+.m.1 add command -label Open -command {puts stdout "Invoked File Open"}
+.m.1 add command -label Close
+menu .m.2
+.m.2 add command -label Smooth
+.m.2 add command -label horta
+. config -menu .m
+wm geometry . +500+0
+raise .

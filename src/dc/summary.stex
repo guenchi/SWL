@@ -1,0 +1,44 @@
+\chapter{Summary of Forms\label{chapter:summary}}
+
+\bf{Put something here to explain what the table is}
+
+\input{ref.sfm}
+
+%%% \bigskip
+%%% \begingroup
+%%% \iflatex
+%%% \def\sfentry#1#2#3{
+%%%  \par
+%%%  \hbox to \hsize{%
+%%%   \hbox to 24pc{\let\foo=\scheme\foo{#1}\ \hfil}%
+%%%   \hbox to 4pc{{\small#2}\ \hfil}%
+%%%   \hfil #3}}
+%%% \fi
+%%% \ifhtml
+%%% \def\sfentry#1#2#3{
+%%% \raw{<tr><td>}#1\raw{</td><td>}#2\raw{</td><td>}#3\raw{</td></tr>}
+%%% }
+%%% \def\textrm{}
+%%% \def\slshape{}
+%%% \def\normalsize{}
+%%% \fi
+%%% 
+%%% \ifhtml
+%%% \raw{<table>}
+%%% \fi
+%%% \sfentry{{\slshape Form}}{{\normalsize\slshape Category}}{\textrm{\slshape Page}}
+%%% 
+%%% \iflatex
+%%% \kern3pt\hrule\kern3pt
+%%% \fi
+%%% \ifhtml
+%%% \sfentry{\raw{<hr>}}{\raw{<hr>}}{\raw{<hr>}}
+%%% \fi
+%%% 
+%%% \include{sorted-forms.raw}
+%%% \ifhtml
+%%% \raw{</table>}
+%%% \fi
+%%% 
+%%% \endgroup
+%%% 

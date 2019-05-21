@@ -1,0 +1,60 @@
+<html>
+<head>
+<title>Help for Editor</title>
+</head>
+<body>
+
+<h1>Editor Help</h1>
+
+Use the editor to create files containing your programs.
+The editor has several features that simplify editing of Scheme programs,
+including automatic parenthesis highlighting, automatic indentation,
+movement by S-expression, and integration with the REPL.
+<p>
+Just below the menu of the editor is a one-line text area
+where the editor normally displays the line and character position
+of the cursor.
+This area is also used when searching for text within the file
+and when displaying the source of syntax errors.
+
+<h3>Common Key Bindings</h3>
+The REPL and the Editor share a set of
+<a href="keys.html">common key bindings</a>
+for cursor movement and editing.  These bindings are described on
+a separate page.
+<p>
+
+<h3>Key Bindings Specific to the Editor</h3>
+<table><tr><th>Key</th><th>Action</th></tr>
+<tr><td nowrap>Alt+a</td><td>Save file as...</td></tr>
+<tr><td nowrap>Alt+s</td><td>Save file</td></tr>
+<tr><td nowrap>Alt+g</td><td>Save the file and load it into the REPL</td></tr>
+<tr><td nowrap>Alt+&lt;</td><td>Move to beginning of buffer</td></tr>
+<tr><td nowrap>Alt+&gt;</td><td>Move to end of buffer</td></tr>
+</table>
+
+<p>
+MacOS X note: If double-clicking on a Scheme file (extension .ss or .scm)
+does not open up a SWL edit window, please follow the steps below:
+</p>
+
+<ol>
+ <li>In the finder, select a file with the .ss or .scm extension.
+ <li>From the finder File menu, select "Open with".
+ <li>Even if swl.app is shown as the default, select "Other".
+ <li>Locate and single-click swl.app in the Applications folder.
+ <li>Enable the check box labeled "Always Open With".
+ <li>Click on "Open".
+</ol>
+
+<p>
+Double-clicking on files with that extensions should now work properly.
+You may have to repeat the procedure for files with the other extension,
+e.g., .scm if you performed the procedure for a file with the .ss
+extension.
+You can also arrange to use SWL for files with other extensions using
+the same procedure.
+</p>
+
+</body>
+</html>

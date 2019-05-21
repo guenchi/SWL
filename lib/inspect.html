@@ -1,0 +1,80 @@
+<html>
+<head>
+<title>Help for Inspector</title>
+</head>
+<body>
+
+<h1>Inspector Help</h1>
+
+<p><h3>Usage</h3>
+The visual inspector is supplied in source form in the
+<tt>apps/inspector</tt> directory of the source release.
+<p>
+To start, first <tt>(cd "apps/inspector")</tt>, then <tt>(load "inspector.ss")</tt>.
+<ul>
+<li> Use <tt>(vinspect &lt;scheme object&gt;)</tt> to inspect an object.
+<li> Use <tt>(vdebug)</tt> to inspect the last error continuation.
+</ul>
+
+<p><h3>Key Bindings</h3>
+Ctrl is the Control key; Alt is the Alt (or Meta) key.<p>
+
+<table><tr><th align=left>Key</th><th align=left>Binding</th></tr>
+<tr><hr></tr>
+<tr><td nowrap>Q, q</td><td>Quit</td></tr>
+<tr><td nowrap>F</td><td>Forward</td></tr>
+<tr><td nowrap>B</td><td>Backward</td></tr>
+<tr><td nowrap>space, page down</td><td>Forward page</td></tr>
+<tr><td nowrap>backspace, page up</td><td>Backward page</td></tr>
+<tr><td nowrap>Ctrl-n, j</td><td>Forward line</td></tr>
+<tr><td nowrap>Ctrl-p, k</td><td>Backward line</td></tr>
+<tr><td nowrap>&lt;</td><td>Go to top</td></tr>
+<tr><td nowrap>&gt;</td><td>Go to end</td></tr>
+</table>
+
+<p><h3>Button Actions</h3>
+<table><tr><th align=left>Button</th><th align=left>Action</th></tr>
+<tr><hr></tr>
+<tr><td>File -> Quit</td><td>destroy current inspector only</td></tr>
+<tr><td>File -> Spawn</td><td>create new inspector viewing only the current object</td></tr>
+<tr><td>Go</td><td>object history</td></tr>
+<tr><td>Font...</td><td>font dialog</td></tr>
+<tr><td>&lt;</td><td>previous object</td></tr>
+<tr><td>&gt;</td><td>next object</td></tr>
+<tr><td>R</td><td>refresh (reload view in case object is side-effected)</td></tr>
+</table>
+
+<p><h3>Bugs</h3>
+<ul>
+<li> A null embedded in a string will
+     confuse string inspection quite 
+     a bit.
+<li> The keys are somewhat unintuitive.
+<li> Ruthlessly stealing Netscape's interface
+</ul>
+
+<p><h3>Features</h3>
+<ul>
+<li> Very few side-effects.
+<li> Using an xy-output-string, which
+  keeps info about xy position as well
+  as offset.  This needs 
+  set-port-output-buffer!, I think.
+<li> Ruthlessly stealing Netscape's 
+  interface.
+</ul>
+
+<p><h3>Todo</h3>
+<ul>
+<li> circular structures
+<li> ports
+<li> named taggable objects
+<li> sliders for length and level
+<li> perhaps reorganize the creation of
+  inspect-windows so that they
+  keep their length and level better,
+  as well as keeping their graph-envs
+  and fonts (done now with
+  parameterize).
+</ul>
+</html>

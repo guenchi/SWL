@@ -1,0 +1,2 @@
+#!/bin/csh -f
+find . -type f -name "*.ss" | xargs grep $*

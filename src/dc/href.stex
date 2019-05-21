@@ -1,0 +1,40 @@
+\html{
+<h1>SWL Reference Manual</h1>
+<h3>Oscar Waddell<br>
+December 1997</h3>
+&copy; 1997 Cadence Research Systems<br>
+3814 Devonshire South<br>
+Bloomington, IN 47408<br>
+http://www.scheme.com</td></tr>
+<hr>
+}
+\copyright{
+Oscar Waddell<br>
+<em>SWL Reference Manual</em><br>
+&copy; 1997 Cadence Research Systems<br>
+<a href="canned/about.html">about this document</a>
+}
+
+\whenhtml{
+ \def\mytt#1{\html{<code>}#1\html{</code>}}
+ \def\mybf#1{\html{<b>}#1\html{</b>}}
+ \def\noindent{}
+ \def\raggedright{}
+}
+
+\begin{contents}
+\frontmatter
+
+\mainmatter
+\include{ref.macros}
+\include{body}
+
+\backmatter
+
+\chapter{Summary of Forms}
+\makesummary
+
+\chapter{Index}
+\makeindex
+
+\end{contents}

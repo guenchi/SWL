@@ -1,0 +1,9 @@
+#!/bin/sh
+TCL_LIBRARY=/usr/local/lib/tcl8.5
+TK_LIBRARY=/usr/local/lib/tcl8.5
+SWL_ROOT=/home/chez/release/csv8.4/tmp/i3ob/swl1.3/lib
+SWL_LIBRARY=/home/chez/release/csv8.4/tmp/i3ob/swl1.3/lib/i3ob
+export TCL_LIBRARY; export TK_LIBRARY; export SWL_LIBRARY; export SWL_ROOT
+SCHEMEHEAPDIRS=/home/chez/release/csv8.4/boot/%m
+export SCHEMEHEAPDIRS
+exec /home/chez/release/csv8.4/bin/i3ob/scheme -b /home/chez/release/csv8.4/tmp/i3ob/swl1.3/lib/i3ob/swl.boot $@

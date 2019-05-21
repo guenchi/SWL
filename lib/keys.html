@@ -1,0 +1,113 @@
+<html>
+<head>
+<title>Common Editor and REPL Key Bindings</title>
+</head>
+<body>
+
+<h1>Common Editor and REPL Key Bindings</h1>
+In the tables below, Ctrl is the Control key; Alt is the Alt (or Meta)
+key; Esc is the Escape key.
+To type Ctrl+a, hold down the Control key and press a.
+To type Alt+n, hold down the Alt key and press n.
+To type Esc p, press and release the Escape key, then press p.
+For convenience, some commands can be invoked by more than one key sequence.
+<p>
+Some commands move the cursor or select regions by S-expressions.
+An S-expression is a parenthesized form in which the parentheses and/or
+brackets are matched.  For example, <tt>(a [b c] (d e f))</tt> is an
+S-expression containing two nested S-expressions.
+<p>
+<h3>Cursor movement</h3>
+<table><tr><th align=left>Key</th><th align=left>Action</th></tr>
+<tr></tr>
+<tr> <td>Ctrl+g</td><td>Go to line</td> </tr>
+<tr></tr>
+<tr> <td>Up</td><td>Move cursor up one line</td> </tr>
+<tr> <td>Ctrl+p</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>Down</td><td>Move cursor down one line</td> </tr>
+<tr> <td>Ctrl+n</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>Left</td><td>Move cursor left one character</td> </tr>
+<tr> <td>Ctrl+b</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>Right</td><td>Move cursor right one character</td> </tr>
+<tr> <td>Ctrl+f</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>Home</td><td>Move cursor to beginning of line</td> </tr>
+<tr> <td>Ctrl+a</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>End</td><td>Move cursor to end of line</td> </tr>
+<tr> <td>Ctrl+e</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>Ctrl+9</td><td>Move left to start of S-expression</td> </tr>
+<tr> <td>Ctrl+0</td><td>Move right to start of S-expression</td> </tr>
+</table>
+
+<h3>Selecting text</h3>
+Keys for selecting text enter selection mode if selection is not active,
+and they extend the selection in the direction indicated.
+Entering or deleting text while other text is selected causes the
+selected text to be deleted.
+<p>
+<table><tr><th align=left>Key</th><th align=left>Action</th></tr>
+<tr> <td>Shift+Up</td><td>Extend selection one line up</td> </tr>
+<tr> <td>Shift+Down</td><td>Extend selection one line down</td> </tr>
+<tr> <td>Shift+Left</td><td>Extend selection one character to the left</td> </tr>
+<tr> <td>Shift+Right</td><td>Extend selection one character to the right</td> </tr>
+<tr> <td>Shift+Home</td><td>Extend selection to start of line</td> </tr>
+<tr> <td>Shift+End</td><td>Extend selection to end of line</td> </tr>
+<tr> <td>Shift+(</td><td>Select S-expression left</td> </tr>
+<tr> <td>Shift+)</td><td>Select S-expression right</td> </tr>
+<tr> <td>Alt+c</td><td>Copy selected text to clipboard</td> </tr>
+<tr> <td>Alt+v</td><td>Paste text from clipboard</td> </tr>
+<tr> <td>Shift+Insert</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr> <td>Alt+x</td><td>Cut selected text and place on clipboard</td> </tr>
+</table>
+
+<h3>Deleting text</h3>
+<table><tr><th align=left>Key</th><th align=left>Action</th></tr>
+<tr> <td>Delete</td><td>Delete character to right of cursor (or selection)</td> </tr>
+<tr> <td>Ctrl+d</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>Backspace</td><td>Delete character to left of cursor (or selection)</td> </tr>
+<tr> <td>Ctrl+h</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>Ctrl+k</td><td>Delete from cursor to end of line</td> </tr>
+<tr> <td>Ctrl+y</td><td>Yank text cut via Ctrl+k</td> </tr>
+<tr> <td>Ctrl+u</td><td>Delete entire line</td> </tr>
+</table>
+<p>
+Ctrl+k can be repeated to cut multiple lines as a unit.
+Pressing Ctrl+y inserts the cut lines at the current cursor position.
+<p>
+
+<h3>Undo and Redo</h3>
+<table><tr><th align=left>Key</th><th align=left>Action</th></tr>
+<tr> <td>Ctrl+z</td><td>Undo last change</td> </tr>
+<tr> <td>Alt+z</td><td>Redo last change</td> </tr>
+</table>
+<p>
+Pressing Ctrl+z repeatedly will undo multiple changes.
+Pressing Alt+z repeatedly will redo multiple changes.
+<p>
+
+<h3>Searching</h3>
+Press Ctrl+s or Ctrl+r to start the string search.
+Enter a string to be searched in the search window that appears above
+the main Editor or REPL window.
+Press Enter to start the search or Esc to abort the search.
+Matching text is highlighed in orange.
+Press Ctrl+s or Ctrl+r to find additional matches.
+Press any other key (e.g., Ctrl+F) to terminate the search.
+<p>
+
+<h3>Other Bindings</h3>
+<table><tr><th align=left>Key</th><th align=left>Action</th></tr>
+<tr> <td>Tab</td><td>Indent current line</td> </tr>
+<tr> <td nowrap>Alt+n</td><td>New edit window</td></tr>
+<tr> <td nowrap>Alt+o</td><td>Open file in new edit window</td></tr>
+<tr> <td nowrap>Alt+q</td><td>Close this window</td></tr>
+</table>
+</body>
+</html>

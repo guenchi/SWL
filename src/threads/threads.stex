@@ -1,0 +1,1062 @@
+\chapter{The SWL Thread System\label{chapter:threads}}
+
+The SWL thread system extends Chez Scheme
+to provide explicit concurrency to both SWL and its applications.  A
+variety of user interface problems are elegantly solved by providing
+both the SWL implementer and the SWL application writer with access to
+multiple independent threads of control. Judicious use of multiple
+threads improves the modularity of both SWL and many of its
+applications.
+
+Chez Scheme provides a sufficient basis for implementing a thread
+system entirely in Scheme.  The Chez Scheme notions of interrupt
+handling and timed preemption provide a mechanism for interrupting
+execution of a Scheme program in a controlled way. 
+
+Scheme's general purpose control primitive
+\scheme{call-with-current-continuation} (\scheme{call/cc}) provides a
+means for defining new dynamic execution contexts, or
+\emph{continuations}, and for the transfer of control from one
+continuation to another.  When augmented with appropriate additional
+information, a Scheme continuation becomes a \emph{thread}, or
+independently schedulable continuation.  The SWL thread system
+provides for the creation and destruction, suspension and resumption,
+synchronization, and inspection of multiple threads of control.
+
+The major design goals for the thread system are summarized here:
+
+\begin{itemize}
+
+\item The thread system should be optimized for SWL (both its
+internals and its application programs).
+
+\item The presence of multiple threads should be as transparent as
+possible to both SWL application developer and end-user.  At first
+glance, the system should appear to have a single-threaded ``look and
+feel.''
+
+\item The impact of thread system overhead on single-thread
+performance should be minimal.
+
+\item Compatibility with the Chez Scheme language should be maintained
+wherever possible.
+
+\item the SWL thread system should have minimal dependency on Chez
+Scheme system source code and internals.
+
+\end{itemize}
+
+While these goals have largely been achieved, we note two significant
+exceptions now. First, the Chez Scheme syntactic form \scheme{fluid-let} does
+not function with multiple threads as might be expected.  Second, to
+achieve the other goals we have tolerated some dependence on Chez
+Scheme internals, i.e., the use of certain undocumented Chez Scheme
+system mode primitives. These issues are fully discussed below.
+
+The rest of this chapter is a user's guide to the SWL thread system.
+The the thread system adds a number of API procedures and syntax, data
+stuctures, and global variables.  Separate sections discuss the
+effects on standard language constructs and dependencies on Chez
+Scheme internals.
+
+%=============================================================================
+\section{API Procedures}
+
+
+The thread system adds a number of user interface procedures to Chez
+Scheme.
+
+
+%%%\subsection{Query Primitives}
+\section{Query Primitives}
+%--------------- ps
+\entryheader
+\formdef{ps}{procedure}{(ps)}
+\formdef{ps}{procedure}{(ps \var{thread})}
+\returns a list of thread data
+\endentryheader
+
+\noindent
+
+
+\scheme{ps} returns a list of values, one for each thread of the
+current thread group, where each value provides information about the
+thread. A value is a list of atoms (strings, symbols, or numbers), or
+sublists of two elements: a keyword symbol and an atom.  The argument
+thread specifies which thread's values are returned.  If omitted,
+thread defaults to the currently running thread.
+
+The output of \scheme{ps} is intended for use as input to an
+interpreting procedure, such as \scheme{pps}.
+
+%--------------- ps-all
+\entryheader
+\formdef{ps-all}{procedure}{(ps-all)}
+\returns see explanation
+\endentryheader
+
+\noindent
+
+
+\scheme{ps-all} returns a list of values, one for each thread in
+the system, where each value provides ``raw'' information describing
+the thread. See \scheme{ps} above for more details.
+
+The output of \scheme{ps-all} is intended for use as input to an interpreting
+procedure, such as \scheme{pps}.
+
+
+%--------------- (pps  . output-port)
+\entryheader
+\formdef{pps}{procedure}{(pps)}
+\formdef{pps-port}{procedure}{(pps \var{output-port})}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+
+\scheme{pps} (short for ``pretty ps'') prints a status report for all threads.
+\scheme{output-port} determines where the report is printed.  If omitted, it
+defaults the value of \scheme{(current-output-port)}. 
+
+
+\schemedisplay
+> (pps)
+
+(run-queue 10 4) (sleep-queue)
+
+Thread                 Attributes
+------                 ----------
+[console(1)]           app-q 0.01 server (starts 8) 
+  [Fallback(2)]        idle (priority -1) 0.01 server (starts 4) 
+[System Fallback(3)]   idle (priority -1) 0.01 server (starts 1) 
+[Event Dispatcher(4)]  ready (lowest priority) 0.01 server (starts 2499) 
+[Fallback(7)]          idle (priority -1) 0.01 server (starts 998) 
+  [Repl(9)]            running 0.01 server (starts 9) 
+  [10]                 (sleeping 0.099) 0.01 (starts 14) 
+
+> 
+\endschemedisplay
+
+In this example \scheme{pps-all} has been executed in a freshly started SWL system.
+The output shows that at present there are seven threads in total,
+which are clustered into four thread groups.  The first group provides
+support for the conventional Chez Scheme command line interpreter.
+The second and third (single-thread) groups are internal to SWL.  The
+forth group (of three threads) is allocated to the initial REPL, which
+is automatically created when SWL is started.
+
+A thread attribute is either an atom or a list containing a keyword
+and a value. Certain attributes are optional may not appear for a
+given thread. The possible attributes are:
+
+
+\begin{itemize}
+
+\item the name of the queue on which the thread is waiting, and, if
+sleeping, the amount of time in seconds before the thread is to be
+awakened by the scheduler.
+
+\item (optional) the keyword \scheme{priority} and an integer value, which
+indicates the scheduling priority of the thread (smaller
+numbers indicate higher priority), or
+
+\item (optional) the lists \scheme{(lowest priority)} or
+\scheme{(highest priority)}, indicating that the thread either
+precedes or follows all other threads in scheduling priority.
+
+\item the running time quantum, in seconds.  Indicates the amount of
+CPU time the thread will be permitted to consume before it is
+preempted by the scheduler.
+
+\item (optional) the symbol \scheme{server}, if the thread is a server (see
+\scheme{thread-become-server!}).
+
+\item the keyword \scheme{starts} and an integer value, which indicates the
+number of times the thread has been executed (i.e., started) by the
+scheduler.
+
+\end{itemize}
+
+
+
+%--------------- ps-num
+\entryheader
+\formdef{ps-num}{procedure}{(ps-num)}
+\returns the number of threads in the system
+\endentryheader
+
+\noindent
+
+\scheme{ps-num} returns the number of threads currently in the system.
+The number of threads is affected by thread creation (via
+\scheme{thread-fork} and \scheme{thread-fork-group)} and by thread
+termination (via \scheme{thread-kill)}.
+
+%--------------- thread->k
+\entryheader
+\formdef{thread->k}{procedure}{(thread->k)}
+\returns the thread's continuation
+\endentryheader
+
+\noindent
+
+
+\scheme{thread->k} returns the Scheme continuation of its thread
+argument.  If the currently executing thread is passed, the return
+value is the continuation of the currently executing thread when it
+was last started.
+
+%--------------- thread-number
+\entryheader
+\formdef{thread-number}{procedure}{(thread-number)}
+\returns the thread's id number
+\endentryheader
+
+\noindent
+
+
+\scheme{thread-number} returns the integer identifier of the argument thread,
+or the currently executing thread if no argument is supplied.
+
+%--------------- thread-self
+\entryheader
+\formdef{thread-self}{procedure}{(thread-self)}
+\returns the thread itself
+\endentryheader
+
+\noindent
+
+
+\scheme{thread-self} returns the currently executing thread.  In the thread
+system, all Scheme code is executed within an associated thread.
+
+%--------------- thread-quantum-remaining
+\entryheader
+\formdef{thread-quantum-remaining}{procedure}{(thread-quantum-remaining)}
+\returns the thread's remaining execution time
+\endentryheader
+
+\noindent
+
+
+\scheme{thread-quantum-remaining} returns the amount of execution time
+remaining before the currently executing thread is subject to
+preemption by the thread scheduler.  The time quantum is a positive
+real number, typically a small fraction of a second, e.g., .01 second.
+
+If the currently executing thread's time quantum has expired, and
+another thread of equal or higher priority is ready to run, the thread
+scheduler suspends the current thread (i.e., forces the thread to
+yield), and starts another one.
+
+%--------------- thread-find
+\entryheader
+\formdef{thread-find}{procedure}{(thread-find)}
+\returns see explanation
+\endentryheader
+
+\noindent
+
+
+\scheme{thread-find} returns the thread corresponding to the integer identifier
+argument.  If no such thread exists, thread-find returns \scheme{#f}.
+
+
+%%%\subsection{Control Flow Primitives}
+\section{Control Flow Primitives}
+
+%--------------- thread-become-server!
+\entryheader
+\formdef{thread-become-server!}{procedure}{(thread-become-server!)}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+
+Exceptions are execution events that alter the normal flow of control
+within a thread.  There are several kinds of thread system exceptions:
+interrupts, resets, and errors. Different kinds of threads may handle
+these exceptions in different ways.  One kind of thread that is
+frequently used in SWL is called a \emph{server}.  A server is a
+thread that:
+
+\begin{itemize}
+
+\item waits for input from an input source such as the keyboard or
+another thread.
+
+\item When the input is received, the thread awakens and processes the
+input.
+
+\item When the input is fully processed, the thread returns to waiting
+for input.
+
+\end{itemize}
+
+Typically, a server handles an exception by resuming its wait for more
+input. Examples of server threads are event loops and
+read-eval-print-loops.
+
+\scheme{thread-become-server!} accepts a reset handler and a thread as
+optional arguments.  The thread's \scheme{interrupt-handler} and
+\scheme{reset-handler} parameters, which by default are per-group, are
+changed to per-thread.  The thread's interrupt handler is set to
+invoke the reset handler.  The thread's reset handler is set to the
+handler argument if one is supplied, or else is set to issue a warning
+message and suspend the thread.  Finally, the thread is added to the
+thread group's list of servers.
+
+
+
+%--------------- (thread-become-console! . thread)
+\entryheader
+\formdef{thread-become-console!}{procedure}{(thread-become-console!)}
+\formdef{thread-become-console!}{procedure}{(thread-become-console! \var{thread})}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+Exactly one thread in the system is distinguished as the console
+thread.  The console thread is interrupted in response to a Chez
+Scheme keyboard or Unix process interrupt event.  If the optional
+argument is omitted, the currently running thread becomes the console.
+\scheme{thread-become-console!} calls \scheme{thread-become-server!},
+passing a reset handler that will abort the system if it is called. It
+is the responsibility of the console thread to install a different
+reset handler in order to avoid this possibility.  This happens
+automatically if the console thread subsequently starts a new cafe.
+
+%--------------- thread-break
+\entryheader
+\formdef{thread-break}{procedure}{(thread-break)}
+\formdef{thread-break}{procedure}{(thread-break \var{thread})}
+\formdef{thread-break}{procedure}{(thread-break \var{thread} \var{reason})}
+\formdef{thread-break}{procedure}{(thread-break \var{thread} \var{reason} \var{thunk})}
+\formdef{thread-break}{procedure}{(thread-break \var{thread} \var{reason} \var{thunk} \var{run-now?})}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+\scheme{thread-break} interrupts a thread's normal execution and
+arranges for an interrupt procedure to be called within the
+interrupted thread's dynamic execution context.  If the interrupt
+procedure returns normally, the interrupted thread's normal execution
+will resume.  \scheme{thread-break} permits one thread to side-effect
+another thread's parameter values, or to alter its flow of control.
+
+With no arguments, \scheme{thread-break} interrupts the currently
+running thread, otherwise the specified thread is interrupted. If
+\scheme{reason} is supplied, and is not \scheme{#f}, an exception
+information block is created and stored in the
+\scheme{thread-exception} (per-thread) and \scheme{last-exception}
+(global) parameters for the interrupted thread.  If \scheme{thunk} is
+supplied, it is called by the interrupted thread, otherwise that
+thread's interrupt-handler is called.  If \scheme{run-now?} is
+supplied, the interrupting thread is suspended and the interrupted
+thread is restarted at highest priority so that the interrupt
+procedure is run immediately.  In this case the interrupting thread is
+scheduled to resume immediately following the interrupted thread.
+
+
+%--------------- thread-debug
+\entryheader
+\formdef{thread-debug}{procedure}{(thread-debug)}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+\scheme{thread-debug} calls the Chez Scheme debugger.  The
+continuation stored in \scheme{thread-exception} (which belongs to the
+currently running thread) is inspected, if it exists.  Otherwise, the
+continuation stored in \scheme{last-exception} (which belongs to
+another thread) is inspected, if it exists.  Otherwise a warning
+message is issued that nothing may be inspected.
+
+%--------------- thread-error-handler
+\entryheader
+\formdef{thread-error-handler}{procedure}{(thread-error-handler)}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+A procedure called by the error primitive in response to a thread
+execution error, which prints error data and thread-identifying
+information to the console output port.
+
+
+%%\subsection{Creating and Destroying Threads}
+\section{Creating and Destroying Threads}
+%--------------- thread-fork
+\entryheader
+\formdef{thread-fork}{procedure}{(thread-fork \var{thunk})}
+\formdef{thread-fork}{procedure}{(thread-fork \var{thunk} \var{quantum})}
+\formdef{thread-fork}{procedure}{(thread-fork \var{thunk} \var{quantum} \var{priority})}
+\returns a newly created thread
+\endentryheader
+
+\noindent
+
+A thread is a schedulable continuation.  \scheme{thread-fork} converts
+\scheme{thunk} into a new ready-to-run thread in the current thread's
+group. \scheme{quantum} is the amount of time in milliseconds that the
+thread may run before it is preempted by the scheduler.  If
+\scheme{quantum} is omitted, it defaults to the value of the parameter
+\scheme{thread-default-quantum}.  \scheme{priority} determines when a
+thread will be executed when multiple threads are ready to run.  A
+higher priority thread always runs before a lower one.  If omitted,
+\scheme{priority} defaults to the priority of assigned to the caller's
+thread group.
+
+
+%--------------- thread-fork-group
+\entryheader
+\formdef{thread-fork-group}{procedure}{(thread-fork-group)}
+\formdef{thread-fork-group}{procedure}{(thread-fork-group \var{quantum})}
+\formdef{thread-fork-group}{procedure}{(thread-fork-group \var{quantum} \var{priority})}
+\formdef{thread-fork-group}{procedure}{(thread-fork-group \var{quantum} \var{priority} \var{params})}
+\returns a newly created thread, in a new group
+\endentryheader
+
+\noindent
+
+A thread group is a collection of threads that share a single set of
+extended parameter group locations.  \scheme{thread-fork-group}
+converts \scheme{thunk} into a new ready-to-run thread in a new
+group. \scheme{quantum} is the amount time in seconds that the thread
+may run before it is preempted by the scheduler.  If \scheme{quantum}
+is omitted, it defaults to the value of the parameter
+\scheme{thread-default-quantum}.  \scheme{priority} determines when a
+thread will be executed when multiple threads are ready to run.  A
+higher priority thread always runs before a lower one.  If omitted,
+\scheme{priority} defaults to the priority of assigned to the caller's
+thread group. \scheme{params} is a vector of thread group parameter
+values to be copied into the new group's parameters.  If omitted,
+\scheme{params} defaults to the vector of parameter values assigned to
+the caller's thread group.
+
+
+%--------------- thread-kill
+\entryheader
+\formdef{thread-kill}{procedure}{(thread-kill)}
+\formdef{thread-kill}{procedure}{(thread-kill \var{num})}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+\scheme{thread-kill} terminates the specified thread.  \var{num}
+specifies the integer identifier of the thread to be killed.  If
+omitted, the currently running thread is killed.
+
+It is an error to kill the last runnable thread.
+
+
+%%%\subsection{Inter-thread Communication}
+\section{Inter-thread Communication}
+%--------------- thread-make-msg-queue
+\entryheader
+\formdef{thread-make-msg-queue}{procedure}{(thread-make-msg-queue \var{name})}
+\returns a message queue
+\endentryheader
+
+\noindent
+
+A message queue is an object that enables thread synchronization and
+the exchange of data between cooperating threads.
+\scheme{thread-make-msg-queue} creates a new empty message queue.
+\var{name} is a datum (typically a Scheme symbol) that denotes the
+queue.
+
+
+%--------------- thread-msg-waiting?
+\entryheader
+\formdef{thread-msg-waiting?}{procedure}{(thread-msg-waiting? \var{queue})}
+\returns a boolean
+\endentryheader
+
+\noindent
+
+\scheme{thread-msg-waiting?} returns a \scheme{#t} if one or more
+messages have been placed on the queue (by a call to
+\scheme{thread-send-msg)}.  Otherwise, it returns \scheme{#f}.
+
+
+%--------------- thread-receive-msg
+\entryheader
+\formdef{thread-receive-msg}{procedure}{(thread-receive-msg \var{queue})}
+\returns a queued message
+\endentryheader
+
+\noindent
+
+If a message is waiting on queue, \scheme{thread-receive-msg}
+immediately returns the message, otherwise it enqueues the thread on
+the queue, which blocks it from running until another thread sends a
+message to the queue.
+
+%--------------- thread-receiver-waiting?
+\entryheader
+\formdef{thread-receiver-waiting?}{procedure}{(thread-receiver-waiting? \var{queue})}
+\returns a boolean
+\endentryheader
+
+\noindent
+
+\scheme{thread-receiver-waiting?} returns \scheme{#t} if a thread is
+blocked on the queue awaiting a message.  Otherwise, it returns
+\scheme{#f}.
+
+
+%--------------- thread-send-msg
+\entryheader
+\formdef{thread-send-msg}{procedure}{(thread-send-msg \var{queue} \var{msg})}
+\formdef{thread-send-msg}{procedure}{(thread-send-msg \var{queue} \var{msg} \var{mode})}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+If a receiver thread is waiting on \var{queue},
+\scheme{thread-send-msg} immediately delivers \var{msg} to the
+thread, causing it to be rescheduled as ready-to-run, otherwise it
+enqueues the message on the queue and immediately returns. If \var{mode} is
+supplied it must be the symbol \scheme{urgent}.  Urgent mode causes
+the message receiver, if any, to be immediately awakened and run at
+highest priority.  The sending thread yields at highest priority, so
+that it will immediately follow the receiver when that thread next
+yields.
+
+
+%%%\subsection{Thread Scheduling}
+\section{Thread Scheduling}
+%--------------- thread-reschedule
+\entryheader
+\formdef{thread-reschedule}{procedure}{(thread-reschedule \var{thread} \var{priority})}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+\scheme{thread-reschedule} moves previously enqueued \var{thread} to a new
+position within its queue, based on \var{priority}, an integer value.
+
+
+%--------------- thread-sleep
+\entryheader
+\formdef{thread-sleep}{procedure}{(thread-sleep \var{msecs})}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+\scheme{thread-sleep} suspends the currently running thread for
+\var{msecs} milliseconds, by placing it on the sleep queue.
+
+%--------------- thread-wake
+\entryheader
+\formdef{thread-wake}{procedure}{(thread-wake \var{thread})}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+\scheme{thread-wake} awakens \var{thread} by removing it from the
+sleep queue and placing it on the run queue.
+
+
+%--------------- thread-yield
+\entryheader
+\formdef{thread-yield}{procedure}{(thread-yield)}
+\formdef{thread-yield}{procedure}{(thread-yield \var{queue})}
+\formdef{thread-yield}{procedure}{(thread-yield \var{queue} \var{priority})}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+\scheme{thread-yield} suspends the currently running thread, forcing
+it to relinquish control to another runnable thread.  The current
+thread's scheduling priority is reset to the priority of its group
+(see \scheme{thread-reschedule)}, and the thread is placed in the
+run-queue according to its (new) priority.
+
+The return value of \scheme{thread-yield} is used internally by the
+thread system (by the message queue primitives), and should be ignored
+by user code.
+
+
+%%%\subsection{Miscellaneous Primitives}
+\section{Miscellaneous Primitives}
+
+
+
+%----------------- thread-highest-priority
+\entryheader
+\formdef{thread-highest-priority}{procedure}{(thread-highest-priority)}
+\returns see explanation
+\endentryheader
+
+\noindent
+
+\scheme{thread-highest-priority} returns a negative fixnum value that
+denotes the highest priority at which a thread may be scheduled to
+run. (Larger numbers represent lower priorities.)
+
+%----------------- thread-lowest-priority
+\entryheader
+\formdef{thread-lowest-priority}{procedure}{(thread-lowest-priority)}
+\returns see explanation
+\endentryheader
+
+\noindent
+
+\scheme{thread-lowest-priority} returns a positive fixnum value that
+denotes the lowest priority at which a thread may be scheduled to
+run. (Larger numbers represent lower priorities.)
+
+
+
+%--------------- thread-make-parameter
+\entryheader
+\formdef{thread-make-parameter}{procedure}{(thread-make-parameter \var{value} \var{filter})}
+\returns a new extended parameter
+\endentryheader
+
+\noindent
+
+In standard Chez Scheme a parameter is a procedure that encapsulates a
+single location. The thread system enhances standard parameters to
+permit individual threads and thread groups to possess distinct,
+private locations, or to access a single, global location.  A extended
+parameter is a procedure that manages access to the various assignment
+locations associated with the parameter.
+
+\var{value} and \var{filter} are as for standard parameters.
+\var{value} is assigned to the extended parameter's global
+location.
+
+
+
+%=============================================================================
+\section{Global Variables}
+
+%--------------- thread-timer-interrupt-hook
+\entryheader
+\formdef{thread-timer-interrupt-hook}{global variable}{thread-timer-interrupt-hook}
+\endentryheader
+
+\noindent
+
+\scheme{thread-timer-interrupt-hook} is assigned a thunk that is called once
+for each interrupt taken by the Chez Scheme timer interrupt.  Since
+the thread system triggers the timer interrupt at a very high
+frequency, it is essential that the timer interrupt hook procedure be
+made as simple as possible.
+
+
+
+
+%----------------- thread-run-queue-idle?
+\entryheader
+\formdef{thread-run-queue-idle?}{global variable}{thread-run-queue-idle?}
+\endentryheader
+
+\noindent
+
+\scheme{thread-run-queue-idle?} is \scheme{#t} if one or more threads
+are ready to run, \scheme{#f} otherwise.
+
+%----------------- thread-sleep-queue-idle?
+\entryheader
+\formdef{thread-sleep-queue-idle?}{global variable}{thread-sleep-queue-idle?}
+\endentryheader
+
+\noindent
+
+
+\scheme{thread-sleep-queue-idle?} is \scheme{#t} is one or more
+threads are sleeping, i.e., blocked on the sleep queue, \scheme{#f}
+otherwise.
+
+%----------------- thread-conout
+\entryheader
+\formdef{thread-conout}{global variable}{thread-conout}
+\endentryheader
+
+\noindent
+
+thread-conout is the standard  Chez Scheme console output port.
+
+%=============================================================================
+\section{Redefined Chez Scheme Procedures}
+
+
+%----------------- error
+\entryheader
+\formdef{error}{procedure}{(error)}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+\scheme{error} invokes the thread's error handler.  Then, if the
+thread is not a server, \scheme{error} suspends the thread.
+Otherwise, \scheme{error} calls \scheme{reset}.
+
+
+
+%----------------- reset
+\entryheader
+\formdef{reset}{procedure}{(reset)}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+If a currently running thread is not a server, \scheme{reset} issues a
+warning and returns.  Otherwise, it invokes the thread's
+\scheme{reset-handler}, as in standard Chez Scheme.
+
+
+%----------------- new-cafe
+\entryheader
+\formdef{new-cafe}{procedure}{(new-cafe)}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+\scheme{new-cafe} starts a new Chez Scheme cafe in the currently
+executing thread group.  The thread system supports multiple concurrently
+executing cafes.
+
+
+%=============================================================================
+\section{Enhancement of Chez Scheme Parameters}
+
+Chez Scheme extends the standard Scheme top-level environment with
+additional global variables. To provide disciplined access to these
+system variables, each variable is assigned an interface procedure
+called a \emph{parameter}. In standard Chez Scheme, a parameter
+encapsulates a single location, which stores the value of the
+parameter.
+
+With multiple threads, parameter locations should often be made
+private to individual threads, or to thread groups.  In the thread
+system, most Chez Scheme system parameters are reimplemented to
+provide distinct storage locations for different threads.  Parameters
+with more than one storage location are called \emph{extended
+parameters}.  In addition to per-thread and per-group locations, each
+extended parameter retains a single location that is global to all
+threads.  A parameter's location is either private to the thread, or
+it may be \emph{delegated} to the thread's group location or to the
+global location.  Location delegation is determined per-thread based
+on the \emph{assignment mode}. The default assignment mode uses the
+group location.
+
+Extended parameters require additional operations and arguments.  With
+zero or one argument, an extended parameter behaves like a standard
+parameter, except that the accessed location may be local to the
+thread or group.  For clarity, in this section a parameter call with
+zero or one argument is labeled a standard parameter operation.  When
+called with exactly two arguments, an extended parameter performs an
+extended operation. The first argument of a two-argument parameter
+call is the \emph{operation} and the second argument is the
+\emph{value}:
+
+\entryheader
+\formdef{<parameter>}{extended parameter}{(<parameter> \var{operation} \var{value})}
+\returns see below
+\endentryheader
+
+\noindent
+
+For certain extended parameter operations, the value argument is
+unused, however an argument must still be supplied.  The unused
+argument is a placeholder that provides the number of arguments needed
+to distinguish extended (two-argument) parameter operations from
+standard (zero or one argument) ones.  The extended operations are as
+follows:
+
+\begin{itemize}
+
+\item \scheme{get-assignment-mode}, which returns the type of
+location, \scheme{thread} (private to a single thread) or
+\scheme{group} (shared by all threads of one group), to which a
+standard operation applies.  Note that the global location cannot be
+set by a standard parameter assignment (i.e., there is no ``global''
+assignment mode).  The default assignment mode is \scheme{group}.
+
+\item \scheme{set-assignment-mode!}, which sets the parameter's
+assignment mode.  Value must be one of the symbols \scheme{thread} or
+\scheme{group}.  If \scheme{thread}, the current parameter value
+(either group or global) is copied into the new thread location.  If
+\scheme{group}, the mode must already be set to \scheme{thread} or a
+warning will be issued. Otherwise, the \scheme{thread} location is
+disabled and \scheme{group} becomes the effective location type.
+
+
+\item \scheme{get-global}, returns the global value assigned to 
+the parameter.  \scheme{value} is an unused placeholder.
+
+\item \scheme{set-global!},  sets the parameter's global location 
+to \scheme{value}.
+
+\item \scheme{get-group}, returns the parameter's thread group
+value.  \scheme{value} is an unused placeholder.
+
+\item \scheme{set-group!},  sets the parameter's group location
+to \scheme{value}.
+
+\item \scheme{disable-mode-changes}, prevents subsequent changes of
+the parameter assignment mode.
+
+\item \scheme{get-value-for}, performs a standard parameter reference
+for the thread specified by \scheme{value}.
+
+\end{itemize}
+
+
+
+
+
+
+
+
+%%%\subsection{Replacement of Existing Parameter Values}
+\section{Replacement of Existing Parameter Values}
+
+
+The thread system adds several standard and extended parameters to the
+Scheme top-level environment.
+
+%----------------- keyboard-interrupt-handler
+\entryheader
+\formdef{keyboard-interrupt-handler}{parameter}{(keyboard-interrupt-handler)}
+\returns see explanation
+\endentryheader
+
+\noindent
+
+The thread system replaces the Chez Scheme
+\scheme{keyboard-interrupt-handler}.  Hence, this handler must not be
+changed by the user.
+
+
+%----------------- timer-interrupt-handler
+\entryheader
+\formdef{timer-interrupt-handler}{parameter}{(timer-interrupt-handler)}
+\returns see explanation
+\endentryheader
+
+\noindent
+
+The thread system replaces the Chez Scheme
+\scheme{timer-interrupt-handler}.  Hence, this handler must not be
+changed by the user.
+
+
+
+
+%%%\subsection{New Standard Parameters}
+\section{New Standard Parameters}
+
+%----------------- thread-default-quantum
+\entryheader
+\formdef{thread-default-quantum}{parameter}{(thread-default-quantum)}
+\formdef{thread-default-quantum}{parameter}{(thread-default-quantum \var{quantum})}
+\returns an integer
+\endentryheader
+
+\noindent
+
+\scheme{thread-default-quantum} is the default execution time quantum
+in milliseconds that is assigned when a thread is scheduled for
+execution.
+
+
+%----------------- thread-default-ticks
+\entryheader
+\formdef{thread-default-ticks}{parameter}{(thread-default-ticks)}
+\formdef{thread-default-ticks}{parameter}{(thread-default-ticks \var{ticks})}
+\returns an integer
+\endentryheader
+
+\noindent
+
+\scheme{thread-default-ticks} is the number of Chez Scheme timer ticks
+that must elapse before a timer interrupt occurs, thus determining the
+frequency of timer interrupts.  
+
+Higher interrupt frequencies increase both the timing accuracy of the
+preemptive scheduling algorithm and overhead caused by preemptive
+scheduling.  The default value was selected to give good performance
+under most conditions.
+
+%----------------- last-exception
+\entryheader
+\formdef{last-exception}{parameter}{(last-exception)}
+\returns see explanation
+\endentryheader
+
+\noindent
+
+
+%%%\subsection{New Extended Parameters}
+\section{New Extended Parameters}
+
+%----------------- cafe-level
+\entryheader
+\formdef{cafe-level}{extended parameter}{(cafe-level)}
+\formdef{cafe-level}{extended parameter}{(cafe-level \var{level})}
+\returns see explanation
+\endentryheader
+
+\noindent
+
+SWL enables multiple user interaction environments (read-eval-print
+loops) to be active concurrently.  The Chez Scheme cafe procedure
+implements one such user environment.  In SWL, multiple cafes may be
+active concurrently, each running in a separate thread group.
+
+\scheme{cafe-level} determines the cafe nesting level of a single Chez
+Scheme cafe.  Hence, one \scheme{cafe-level} parameter location is
+allocated for each thread group.
+
+
+%----------------- interrupt-handler
+\entryheader
+\formdef{interrupt-handler}{extended parameter}{(interrupt-handler)}
+\formdef{interrupt-handler}{extended parameter}{(interrupt-handler \var{handler})}
+\returns see explanation
+\endentryheader
+
+\noindent
+
+interrupt-handler provides each thread with an \emph{interrupt} thunk.
+
+An executing thread may forcibly alter another thread's normal flow of
+control by \emph{interrupting} it via a call to \scheme{thread-break}.
+\scheme{thread-break} takes an optional argument, an interrupt thunk.
+If no argument is supplied, the interrupt thunk is taken from the
+thread's interrupt handler.
+
+When the interrupted thread is next started, control is transferred to
+the interrupt thunk.  If the interrupt thunk returns normally, control
+is then transferred to the interrupted thread's original continuation.
+
+
+%----------------- thread-exception
+\entryheader
+\formdef{thread-exception}{extended parameter}{(thread-exception)}
+\returns unspecified
+\endentryheader
+
+\noindent
+
+A thread exception is a data structure created each time a exception
+occurs during a thread's execution. Kinds of exceptions are errors and
+interrupts. The exception data structure stores the thread's
+continuation and other data about the exception.  The continuation is
+available for inspection.
+
+
+%----------------- thread-group-servers
+\entryheader \formdef{thread-group-servers}{extended parameter}{(thread-group-servers)} 
+\returns a list of server threads
+\endentryheader
+
+\noindent
+
+A server is a thread that is designed to handle events or process
+transactions indefinitely.  Kinds of servers are read-eval-print loops
+and SWL event loops.  Under normal circumstances a server thread does
+not terminate, even when an error exception occurs.
+
+\scheme{(thread-group-servers)} returns a list of all the threads in the
+current thread's group that are servers.
+
+
+
+%----------------- thread-name
+\entryheader
+\formdef{thread-name}{extended parameter}{(thread-name)}
+\formdef{thread-name}{extended parameter}{(thread-name \var{name})}
+\returns the name of the thread, a string
+\endentryheader
+
+\noindent
+
+\scheme{(thread-name)} returns the name assigned to the thread, a
+Scheme string.  The default name is the empty string.
+
+
+%----------------- thread-priority
+\entryheader
+\formdef{thread-priority}{extended parameter}{(thread-priority)}
+\formdef{thread-priority}{extended parameter}{(thread-priority \var{priority})}
+\returns a fixnum integer
+\endentryheader
+
+\noindent
+
+Each thread is assigned an execution priority, a Scheme fixnum
+integer.  The most negative fixnum is the highest priority value.
+Higher priority threads always execute ahead of lower priority ones.
+
+\scheme{(thread-quantum)} returns the thread's priority.
+
+
+%----------------- thread-quantum
+\entryheader
+\formdef{thread-quantum}{extended parameter}{(thread-quantum)}
+\formdef{thread-quantum}{extended parameter}{(thread-quantum \var{quantum})}
+\returns a real valued thread quantum
+\endentryheader
+
+\noindent
+
+Each thread is assigned an execution time quantum, specified in
+seconds.  The quantum determines how much CPU time a thread is
+permitted to consume before it is preempted (i.e., forced to yield in
+favor of another runnable thread).  A typical quantum is ten
+milliseconds.
+
+\scheme{(thread-quantum)} returns the run-time allotted when the thread
+is scheduled to run.
+
+
+%=============================================================================
+\section{Thread System Effects on Standard Language Constructs}
+
+
+\begin{itemize}
+\item   \scheme{dynamic-wind} 
+\item   \scheme{fluid-let} 
+\item   \scheme{parameterize}
+
+A thread context switch does not invoke continuation winders.  Hence,
+the effects of \scheme{dynamic-wind}, \scheme{fluid-let}, and
+\scheme{parameterize} are not undone when a thread yields control to
+another thread.
+
+Many Chez Scheme parameters are maintained on a per-thread basis,
+however, and the values of such threaded parameters are changed with
+each context switch.  Finally, the Chez Scheme interrupt counter,
+which is affected by the Chez Scheme primitives
+\scheme{enable-interrupts}, \scheme{disable-interrupts}, and
+\scheme{critical-section}, is also maintained on a per-thread basis.
+Thus, for example, a thread yield that occurs within the context of a
+\scheme{critical-section} effectively cancels the
+\scheme{critical-section} (and re-enables interrupts) until the
+invoking thread is restarted.
+
+\end{itemize}
+

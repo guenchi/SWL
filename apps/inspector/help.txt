@@ -1,0 +1,76 @@
+;; this file should be a pair of help labels and texts
+
+;; -------------------------------------
+"Inspector"
+
+"
+Keys:
+ quit:	   Q, q
+ forward:  F
+ backward: B
+
+Scrolling:
+ Forward Page:   space
+ Backward Page:  backspace
+ Forward Line:   Ctrl-n, j
+ Backward Line:  Ctrl-p, k
+ Goto End:       >
+ Goto Beginning: <
+
+* Start this program with
+  (vinspect <some scheme object>)
+  though you've already done that.
+* (vdebug) inspects the last error
+  continuation.
+* ``File''-Quit destroys the current 
+  inspector only.
+* ``File''-Spawn spawns off a new
+  inspector containing only the 
+  currently viewed object.
+* The big R button stands for 
+  ``refresh''.  It reloads the 
+  currently viewed object (in case it
+  is side-effected, for example)
+"
+
+
+;; -------------------------------------
+"Bugs"
+
+"
+* A null embedded in a string will
+  confuse string inspection quite 
+  a bit.
+* The keys are somewhat unintuitive.
+* Ruthlessly stealing Netscape's 
+  interface
+"
+
+;; -------------------------------------
+"Features"
+
+" 
+* Very few side-effects.
+* Using an xy-output-string, which
+  keeps info about xy position as well
+  as offset.  This needs 
+  set-port-output-buffer!, I think.
+* Ruthlessly stealing Netscape's 
+  interface.
+"
+
+;; -------------------------------------
+"Todo"
+
+"
+* circular structures
+* ports
+* named taggable objects
+* sliders for length and level
+* perhaps reorganize the creation of
+  inspect-windows so that they
+  keep their length and level better,
+  as well as keeping their graph-envs
+  and fonts (done now with
+  parameterize).
+"

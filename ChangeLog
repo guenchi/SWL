@@ -1,0 +1,2609 @@
+==============================================================================
+Entry format is
+  MM/DD/YY (category)  description (culprit's initials) [files changed]
+==============================================================================
+
+<<lots of changes from prcs history need to be logged here>>
+
+Fixed weird behavior where repl would accept a malformed expression but
+not add it to the history, and would copy the suffix of the expression
+(after the error position) to the new input line, which is almost never
+what you want.  Instead, we reject malformed expressions and try to
+position the cursor at the point of the error.
+
+Repl now allows you to type #!eof to exit.
+
+--- 1.3  ---------------------------------------------------------------
+06/20/11 now setting mini-buffer disabled background color to blue so
+         that the text stands out better.
+
+06/20/11 rewrote install-graphical-source-handler using the new (as of
+         Version 8.3.1) source-object/annotation support and new (as of
+         Version 8.0 or so) exception system, so we get back the yellow
+         highlighting of lexical and syntax errors.
+
+--- 1.2  ---------------------------------------------------------------
+02/21/11 fixed call to internal $read procedure, which now takes an extra
+         argument to specify whether annotations should be produced
+
+02/20/11 as with C flags, link flags for intel macos now include
+         -mmacosx-version-min=10.4
+
+12/02/10 makerpm now places rpms in RPMDIR, disables creation of debug rpm
+
+11/23/10 removed manifest creation from src/swl/Makefile.vc, supposedly
+         no longer needed for VC 2010
+
+11/22/10 updated foreign.c to fix printf warnings reported by i3osx build
+
+11/22/10 updated configure.ss to add i3nb support, update i3fb, i3ob,
+         and i3osx configurations for moved include and lib files and
+         changes in C compiler options
+
+11/17/10 added SCHEMEHEAPDIRS to generated swl script, if defined at make time
+
+11/17/10 removed useless makeall script
+
+--- 1.1  ---------------------------------------------------------------
+03/19/10 modified pkg/Makefile, pkg/makepkg to allow Scheme version to
+         be specified on the command line
+         (RKD)
+
+03/19/10 added opensolaris support
+         (RKD)
+
+03/19/10 numerous changes to support Chez Scheme Version 8
+         - error-handler => guard or with-exception-handler
+         - error => assertion-violationf or errorf, warning => warningf
+         - \#primitive = $primitive
+         - (get-char x) => send x get-char to avoid conflict with r6rs get-char
+         - (raise x) => send x raise to avoid conflict with r6rs raise
+         - changed various foreign procedures to take bytevectors rather
+           than strings.
+         - reabstracted the C fallback queue operations.
+         - added missing initialization of sigaction in SWL_TclInit
+         - rewrote source-error marking code in repl-text.ss
+         - discarded some code attempting to make configure.ss compatible
+           with older versions of Chez Scheme upon which swl doesn't run
+         - now using make-boot-file
+         - using display-condition rather than our own error formatting
+         - ripped some dead code out of threads.ss
+         - quoted previously unquoted constant vectors
+         - now using get-registry rather than internal C routine
+         (RKD/OW)
+
+03/19/10 using dynamic-wind to make sure repl-port-read-mode is reset
+         to #f if an error occurs reading from repl-port in repl-read
+         (RKD/OW)
+
+--- 1.0d ---------------------------------------------------------------
+05/31/09 added -mmacosx-version-min=10.4 to i3osx, ppcosx CFLAGS in
+         configure.ss so builds even on 10.5 are compatible with 10.4.
+
+05/23/09 added call to Tcl_Finalize before exiting to prevent exit() from
+         hanging under Windows.  The finalize is apparently needed if
+         any socket operations are done, even if they fail to open a
+         connection. (RKD)
+
+05/21/09 various updates to change over to msvcr90.dll for both tcl/tk
+         (now using tcl/tk 8.5.7) which had been (for 8.3.2) using
+         msvcr71.dll and for swl.dll, which had been using the static
+         C library.  now also including manifests in tcl/tk/swl dlls.
+         (RKD)
+
+12/30/07 updated Makefile so that 'make install' should work for Petite
+         Chez Scheme installations as long as lib/$m files are present
+         (RKD)
+
+12/30/07 several tweaks to makepkg and swl source to make swl open source
+         files double-clicked or dragged onto swl icon for MacOS X.  added
+         some text for fixing up filename associations under MacOS X to
+         help.html
+         (RKD)
+
+12/19/07 modified thread break handler to accept 'r' as well as 'q' to
+         quit and reset, for compatibility with non-SWL Chez Scheme
+         (RKD)
+
+09/11/07 repl's waiter-prompt-and-read no longer displays even a space if
+         waiter-prompt-string is empty, as with Chez Scheme's default
+         prompt-and-read
+
+09/10/07 ^J now behaves like ^<enter> in repl, i.e., "accepts" current
+         entry even if cursor isn't at the end of the entry.
+
+04/09/07 eliminated delete-file calls from configure.ss in favor of
+         open-output-file 'replace flag
+
+04/23/07 added imports for swl modules profview depends upon to profview.ss
+
+06/11/07 added support for OpenBSD (i3ob machine type)
+         (RKD)
+
+--- 1.0c ---------------------------------------------------------------
+02/21/07 taught locate-parse-error about vfxparen and vfxnparen
+         (RKD)
+
+--- 1.0b ---------------------------------------------------------------
+01/08/06 added -m32 to i3le LDFLAGS in configure.ss since build actually
+         uses gcc rather than ld
+         (RKD)
+
+12/02/06 added new cs.icns file and reverted to old makepkg with a couple
+         of tweaks so that icon is actually displayed.
+         (RKD)
+
+11/30/06 added i3osx support
+         (RKD)
+
+--- 1.0a ---------------------------------------------------------------
+08/02/06 changed ppcosx InstallPrefix in configure.ss to /usr
+         (RKD)
+
+07/30/06 added build instructions to ./README.
+         (RKD)
+
+07/28/06 eliminated iu-specific cfs preferences settings
+         (RKD)
+
+03/05/06 made InstallPrefix, InstallOwner, and InstallGroup settings per
+         machine-type in configure.ss; moved remaining installation
+         settings from Makefile to Mf-install
+         (RKD)
+
+03/05/06 added support for FreeBSD (i3fb machine type)
+         (RKD)
+
+03/10/06 changed i3nt swlprefs-directory to (a) consult at SWL_PREFS_DIR
+         environment variable and (b) use APPDATA variable if our
+         SwlPrefsDir registry key is not set.  Changed (Petite) Chez Scheme
+         installer to not set SwlPrefsDir, so in usual case, we look for
+         .swlprefs in "%APPDATA%\\Scheme Widget Library\.swlprefs".
+         use of APPDATA suggested by Corey Hildebrandt (mrhelper@nycap.rr.com)
+         who reported problems with our setting of SwlPrefsDir under
+         Windows Vista.
+         (RKD)
+
+02/06/06 fixed module problem noted on 08/31/05 by inserting a with-implicit
+         for the introduced module names in define-swl-class (syntax.ss).
+         backed out the imports added on 08/31/05.
+         (RKD) 
+
+02/06/06 minor mods to oop.ss tutorial so that it will load, even if it
+         doesn't actually do anything.
+         (RKD) 
+
+02/06/06 fixed numerous swl reference manual problems including:
+         missing documentation and missing or differing "returns"
+         for methods, missing labels, multiply defined labels for
+         methods with more than one arity (now distinguished in label
+         by interface and in output by interface in parens), listing of
+         supposedly "omitted" methods, incorrect preface text, missing
+         title/author/date in html version, missing <title>xxx</title>
+         in ref.html
+         (RKD) 
+
+--- 0.9z ---------------------------------------------------------------
+08/31/05 added imports of all our modules to init.ss in gross hack to
+         work around bug with change in import semantics.
+         (RKD) 
+
+06/06/05 (changes for V6.9d) dropped define-syntax for datum; dropped
+         definition for define-pretty-form; changed to use pretty-format;
+         updated version to 0.9z.
+         (RKD) 
+
+--- 0.9y ---------------------------------------------------------------
+06/16/02 (bug fix) Now installing an abort-handler that checks whether
+         there are any editors with unsaved content (or editors with
+         registered interested parties).  Also fixed several bugs in the
+         code written earlier today while migrating swl:make-application to
+         swl:begin-application:
+          - fixed race condition in access to the app-q and token-q that
+            could allow messages to cross.
+          - now forcing the application's fallback queue thread to exit
+            only when we process a swl:exit-application message specific
+            to that application (earlier we were killing the fallback
+            thread when the exit-notify proc was run even if that didn't
+            mean that the application was removed (ie. an editor may have
+            had unsaved content) so clicking Exit SWL with an editor that
+            had modifications would leave that editor without a fallback
+            queue, effectively preventing the user from saving the content
+            of that editor since it couldn't invoke menu callbacks.
+         (OW) [src/swl/init.ss]
+
+06/16/02 (bug fix) We now stripping the cp1in inline handlers from the
+         system primitives redefined by threads.ss.  This should prevent
+         any nasty surprises where we happen to inline a version of
+         read-char or current-input-port that's going directly to the 
+         Chez Scheme thread context structure instead of the SWL thread
+         parameter that replaced c-i-p.  (If we rewrite SWL someday we'll
+         also rewrite the thread system and use the native thread context
+         structures then.)
+         (OW) [src/threads/threads.ss]
+
+06/16/02 (bug fix) Caught a few more key system procedures that manipulate the
+         current-input-port / current-output-port that were missed in the
+         6/11/02 workaround pass: with-input-from-file, with-output-to-file,
+         clear-output-port, char-ready?
+         (OW) [src/threads/threads.ss]
+
+06/16/02 (bug fix)  Fixed memory leak where swl:make-application created
+         fallback queues (and threads) that were locked down and never
+         unlocked.  In the process, moved functionality of swl:make-application
+         into swl:begin-application.  The protocol is now that we call
+         swl:begin-application with a start continuation that will receive
+         an application token that can be passed to swl:end-application to
+         run the exit-notify procedure registered by swl:begin-application.
+         (The exit notify procedure is returned by the start continuation.)
+         A rather hairy mess due to twisted dependencies, but it should keep
+         us safe even now that we're likely to be forking more editors and
+         repls.
+         (OW) [src/swl/teventloop.ss, src/swl/init.ss, apps/common/app.ss,
+               apps/automata/tm.ss, apps/lecture/lecture.ss,
+               apps/htmlview/htmlview.ss, apps/graph/graph.ss,
+               apps/repl/repl.ss, apps/edit/edit.ss, src/swl/menu.ss,
+               src/swl/teventloop.ss]
+
+06/14/02 (bug fix)  Clarified the labels on the buttons in the dialog box
+         that pops up when you try to close an editor that has changes.
+         Now give choice between "Discard changes" and "Keep editing"
+         instead of "yes" "no" "cancel".
+         (OW) [apps/edit/edit.ss]
+
+06/14/02 (bug fix)  swl:end-application now invokes the exit thunk specified
+         in the call to swl:begin-application, as previously documented, but
+         apparently not implemented.  We had been using this in the editor to
+         remove the current editor from the global list of editors.
+         (OW) [src/swl/init.ss]
+
+06/11/02 (bug fix)  Each new repl now starts with just one > in its prompt.
+         Starting a new-cafe in one repl no longer affects the prompt of
+         new-cafes in other repls, nor does it affect prompt level of new
+         repls.
+         (OW) [src/threads/threads.ss, apps/repl/repl-text.ss]
+
+06/11/02 (workaround)  Finally decided to simply redefine the various I/O
+         primitives that use current-input-port or current-output-port as
+         their default port.  These now make an explicit call to the actual
+         (redefined) parameters so that we:
+           1. no longer reset these parameters on each context switch, and
+           2. don't get bitten by the fact that we don't have actual Chez
+              Scheme thread structures representing our threads and their
+              parameters.  Perhaps if we were able to pull this off, we'd
+              get the current port parameters working as desired.
+         Note that the rest of the system probably relies on the current
+         thread/group parameter semantics, so I'm not eager to mess with
+         option 2 until everything else is in order.
+         (OW) [src/threads/threads.ss]
+
+  << Note: changes made during development are logged separately in the PRCS
+     project swl.prj >>
+
+06/09/02 (new feature)  Added code for saving and restoring preferences.
+         The load-prefs method fetches preferences from the global store
+         (or from disk) and marks the widget as the preferences root for
+         its children.  The save-prefs! method stores preferences to disk.
+         The get-pref and set-pref! methods manipulate preferences for a
+         particular widget by delegating up the widget containment links
+         until it finds the widget that loaded the preferences.
+         Cascade and Radio menu items support automatic update of preferences
+         when their prefs-key: option (ie. set-prefs-key!) is set.  Before
+         calling the set-selected! method on a menu items that has a prefs-key
+         set, a parent widget must have invoked load-prefs.
+           ** incompatible change ** calling the get-parent method of a
+              <toplevel> widget is no longer an error.  It simply returns #f.
+         (OW) [src/swl/base1.ss, src/swl/preference.ss, src/swl/menu.ss,
+               src/swl/make.ss, apps/repl/repl.ss, apps/edit/edit.ss,
+               src/swl/frame.ss]
+
+06/07/02 (bug fix)  The invoke and get-action methods of command-menu-items
+         were broken if no action had been set.  Also, when we switched long
+         ago to letting Tcl code handle menu bindings, we let menu events
+         invoke "set-action!" callbacks directly.  Now user-interface menu
+         events call the "invoke" method on the menu item.  Moved the prop-ref
+         and prop-set! protected methods into <tk-object> class where they
+         can be shared by the menu code and the widget code.
+         (OW) [src/swl/menu.ss, src/swl/base1.ss]
+
+06/07/02 (build changes)  Eliminated separate make of oop.boot.  Modified
+         make.ss so that it compares file modification times to determine
+         whether a file needs to be compiled or just visited.  This speeds
+         up build times when we're only modifying the editor or repl.
+         (OW) [src/swl/make.ss]
+
+06/06/02 (bug fix)  The get-actual-values method of <font> objects now returns
+         the font family as a symbol so that we can use these results directly
+         to create a new <font> instance.
+         (OW) [src/swl/option.ss]
+
+06/06/02 (bug fix)  Fixed many places where thread system was printing or
+         reading from current output/input ports when it should have been
+         working with the console ports.
+         (OW) [src/threads/threads.ss]
+
+06/05/02 (cop out)  Unable to determine why system goes spastic if we let
+         a click dismiss the splash screen window, I finally decided to just
+         reduce the amount of time it's on the screen.  It used to be that we
+         could get strange text-highlighting and menu-posting bugs if we clicked
+         to dismiss the splash screen and then moved the mouse over some other
+         SWL window.  It was very annoying in lecture because it often posted
+         some silly menu.
+         (OW) [src/swl/teventloop.ss]
+
+06/05/02 (sigh)  swl:api-procedure needs to take the install method (define or
+         set!) so that it knows how to install the procedure and can play nice
+         with modules or without them.
+         (OW) [src/swl/base2.ss, src/swl/dialog.ss,
+               src/swl/documentation.ss, src/swl/foreign.ss,
+               src/swl/option.ss, src/swl/proto.ss, src/swl/selection.ss,
+               src/swl/syntax.ss, src/swl/teventloop.ss]
+
+06/05/02 (bug fix)  Fix get-title method for menu items whose titles contain
+         underscore characters, e.g. "_File" or "Ed_it".  Fix several bugs in
+         the menu tutorial.
+         (OW) [src/swl/menu.ss, tutorial/menu.ss]
+
+06/04/02 (cleanup + incompatible change)  Use reader syntax to avoid going
+         into system mode.  Changed staging of define-generic so that
+         the old namespace cleanup hack works again.  Moved SWL generics
+         into swl:generics module so we don't even have to clean the
+         dang things up.  Moved SWL macros into swl:macros module.
+         We now must use define-swl-class for anything we expect to
+         subclass or else we'll get errors complaining that variable
+         create is not bound (because it won't see the create macro).
+         We also have to import the various swl modules before we can
+         use them.  Wrapped a module around the thread system.
+         *some of the sample applications still need to be brought up to
+          date with this change*
+         (OW) [src/swl/base2.ss, src/swl/syntax.ss, src/swl/generics.ss,
+               apps/automata/tm.ss, apps/common/app.ss,
+               apps/common/auto-class.ss, apps/common/flex-button.ss,
+               apps/common/flex-text.ss, apps/common/flex-toplvl.ss,
+               apps/common/fontmenu.ss, apps/common/help.ss,
+               apps/common/keyhelp.ss, apps/common/optionbox.ss,
+               apps/common/popup.ss, apps/common/scheme-text.ss,
+               apps/common/scrollframe-m.ss, apps/common/scrollframe.ss,
+               apps/common/selectbox.ss, apps/common/semaphore.ss,
+               apps/consbox/consbox.ss, apps/design/design.ss,
+               apps/design/dm.ss, apps/design/popup.ss, apps/design/vtool.ss,
+               apps/edit/edit-text.ss, apps/edit/edit.ss,
+               apps/fileview/fileview.ss, apps/fileview/view.ss,
+               apps/graph/graph.ss, apps/htmlview/html-text.ss,
+               apps/htmlview/htmlview.ss, apps/inspector/syntax.ss,
+               apps/lecture/lecture.ss, apps/netport/MRA.ss,
+               apps/netport/np.ss, apps/profview/profview.ss, apps/repl/repl.ss,
+               apps/vinterp/vinterp.ss, src/swl/proto.ss, src/swl/teventloop.ss,
+               tutorial/canvas.ss, src/threads/threads.ss]
+
+05/20/02 (bug fix)  Modified Control-k binding in <text> widgets so that the
+         insertion cursor doesn't creep up to the end of the previous line
+         when the user pressed Control-k while cursor is at the end of the
+         buffer.
+         (OW) [src/swl/proto.ss, src/swl/edit.ss]
+
+05/17/02 (bug fix)  Closing the console input/output ports is now a NOP in
+         the REPL just as it is in the usual console version of Chez Scheme.
+         (OW) [apps/repl/repl-text.ss]
+
+--- 0.9v ---------------------------------------------------------------
+08/09/01 (make) removed use of ln -sf, since Solaris's ln doesn't honor
+         the -f flag when creating symbolic links.
+         (RKD) [src/dc/Makefile]
+
+08/09/01 (stex) fixed some bogus error messages with missing slash escapes,
+         caught by tighter restrictions on escape sequences in Chez Scheme
+         Version 6.7.  modified disclean to clean stex stuff.
+         (RKD) [./Makefile, src/dc/html-prep.ss, src/dc/preplib.ss]
+
+08/09/01 (documentation) Updated apps/README (actually resurrected version
+         dropped in the shuffle)
+         (RKD) [apps/README]
+
+08/08/01 (installation) Kent's updated Wise install script.
+         (RKD) [wise/swl.wse]
+
+06/14/01 (bug fix) Updated old object system implementation to compensate for
+         recent syntax-case changes affecting list structure in syntax output.
+         (OW) [src/oop/class.ss]
+
+06/14/01 (bug fix) Updated the (Windows-only) replacement for open-input-file
+         to handle the recently added compression flags accepted by the native
+         open-input-file in recent versions of Chez Scheme.
+         (RKD/OW) [porthack.ss]
+
+06/14/01 (installation) now install apps directory; now determine tcl/tk
+         version at make time; updated wise scripts; abandoned saved heaps
+         under Windows. 
+         (RKD/OW) [Mf-install, Makefile, wise/swl.wse,
+                   make.bat (new), Makefile.vc, tclversion.tcl,
+                   configure.ss, bintar]
+
+02/15/2000 (installation)  Bob Burger contributed enhancements to the WISE
+         installation script used under Windows.  Hopefully I've spliced his
+         updates in appropriately.
+         (OW) [wise/swl.wse]
+
+02/15/2000 (bug fix)  Bob Burger sent in a bug report and provided the fix!
+         The bug was that thread-fork periodically pruned its weak lists, but
+         only got pruned the lists of the top-level threads (not nested ones).
+         This lead to a memory leak of weak-pairs that could be seen by running
+         this program:
+           (begin
+             (thread-fork
+               (lambda ()
+                 (let loop ()
+                   (thread-fork void)
+                   (thread-yield)
+                   (loop))))
+             (void))
+         and watching the number of weak pairs reported by (\#show-allocation).
+         While applying the fix, I saw that swl:install-collect-request-handler was 
+         was brazenly ignoring the existing collect-request-handler (so it was
+         missing the fix we made to threads.ss).
+         (OW) [threads.ss, base2.ss]
+
+01/12/2000 (bug fix)  Fixed annoying bug that left menu items highlighted
+         from time to time after mouse left menubar.  The problem was that
+         tkMenuLeave could bug out (without deactivating highlighted item)
+         if the currently active menu item was a cascade.  This only makes
+         sense if the cascade has a menu and that menu is mapped.
+         (OW) [lib/menu.tcl]
+
+01/12/2000 (bug fix)  Thanks to Bob Burger for pointing out that
+         thread-default-quantum contained an out of scope reference
+         to local variable thread-error.  Bob also pointed out that
+         the assignments in the definition of panic didn't reset the
+         system values of the warning-handler and error-handler.
+         (RGB) [src/threads/threads.ss]
+
+11/23/99 (bug fix, new feature)  The screen->canvas-x and screen->canvas-y
+         methods now return a fixnum.  (At some point Tk started returning
+         a float.)  Fixed variable name typo in <canvas-item> raise and
+         lower methods.  The set-selected! method of <radio-menu-item>s
+         and <check-menu-item>s should now do something useful when
+         passed #f.  The <bitmap> and <photo> classes should now support
+         set-filename! and get-filename methods.
+         (OW) [canvas.ss, canvasitem.ss, menu.ss, image.ss]
+
+06/01/99 (installation bugs) eliminated references to ~dyb, added n32sgi
+         case, and added some unquotes in pax case in configure.ss
+         (RKD) [configure.ss]
+
+04/02/99 (installation) Fixed unbound variable in swlconfig.ss generated
+	 by bintar; joined in one line single-quoted text that was
+	 split across multiple lines confusing Sun's make, in Makefile
+	 generated by bintar.
+         (RKD) [bintar]
+
+04/02/99 (installation, bug fix) Changed installation process slightly
+	 to support creation of linux RPMS and added set-font! call to
+	 force fixed font in tutorial guide (these changes were
+	 actually made before the last cvs commit)
+         (RKD) [configure.ss, Makefile, Mf-install, tutorial/guide.ss]
+
+03/25/99 (bug refix) Forgot to change <edit-text> class for Alt+g change.
+         (RKD) [edit-text.ss]
+
+03/25/99 (bug fix) Rebound the editor's "save and execute" to Alt+g, since
+         Alt+e was already automatically bound to bring up the edit menu.
+         (RKD/OW) [edit.ss, edit.html]
+
+--- 0.9u ---------------------------------------------------------------
+
+03/23/99 (installation) Created a bintar script and fixed Mf-install
+         to install swl.so or swl.sl as appropriate.
+         (RKD) [Mf-install, swlbintar (new)]
+
+03/16/99 (installation) Minor changes to wise script per Bob Burger's
+         suggestions: set to build 32 bit .exe, added "press okay to begin
+         heap-building process" to build dialog.
+         (RKD) [swl.wse]
+
+03/16/99 (installation, documentation) Added make install target.  Updated
+         about html file and manual preface.
+         (RKD) [./Makefile, Mf-install (new), README.INSTALL,
+                about.html, preface.stex]
+
+03/14/99 (bug fixes, installation) Fixed backspace to delete selected
+	 text in scheme-text.  Changed _Open to Open in editor's file
+	 open dialog box title,  Fixed delete to work at the start of
+         a line in repl.  Fixed tab to not switch between windows in
+         addition to it's normal function when overridden by a key
+         press method.  Various changes to wise installation script.
+         (RKD) [scheme-text.ss, edit.ss, repl-text.ss, init.ss, swl.wse]
+
+03/13/99 (bug fix, installation) Updated wise installation script/process
+         again to make consistent with Chez Scheme installation.  Fixed
+         swl:write-file-from-widget to replace and then close output file.
+         (RKD) [swl.wse, swl.lic, index.html, auxio.ss, swl.bat [flushed)]
+
+03/09/99 (Todo update) Updated todo slightly.
+        (RKD) [Todo]
+
+03/09/99 (cleanup, minor changes, installation) Updated wise installation
+	script.  Added about.html linked from Help menu.  Added license
+	for use with wise script.  Updated copyright date to 1998.
+	Disabled templates menu from repl and editor.  Added warning on
+	first use of time about thread system overhead.  Inserted what
+	should be okay pointers to csug and tspl, under installation
+	assumptions made by wise script.  Modified repl to properly
+        identify Petite Chez Scheme.  Updated dc Makefile to add faq.tex
+        to set of tex source files.
+        (RKD) [Notice, edit.ss, repl-text.ss, repl.ss, index.html,
+        teventloop.ss, wise/swl.lic, wise/swl.wse, about.html (new),
+        wip.html (flushed), src/dc/Makefile]
+
+03/05/99 (installation, cleanup) Added wise subdirectory with start on
+        wise installation script.  Removed abxstart resource file
+        (heavy-handed way to eliminate explicit icon binding).
+        (RKD) [wise (new), abxstart/rc (flushed), abxstart/Makefile.vc]
+
+03/05/99 (bug fix) Fixed scheme-prep handling of _{stuff} in \var forms
+        (RKD) [src/dc/stex/scheme-prep.ss]
+
+03/02/99 (bug fix)  No longer installing pretty-printer pattern for the
+        symbol `bind'.  The bind macro was eliminated long ago, and this
+        define-pretty-form should have gone with it.
+        (OW) [src/swl/syntax.ss]
+
+02/23/99 (bug fix, minor changes) Added explicit setting of font to
+        fixed (courier) font in edit and repl apps, since some window
+        managers don't give us fixed fonts by default, including KDE
+        and Windows.  Picked 12pt, although 12pt won't be right in all
+        situations.  (We really need to allow preferences to be saved.)
+        Made font dialog transient wrt <toplevel> so that it doesn't
+        jump under repl/edit window under Windows.  Shortened time
+        before splash screen appears to 1/4 second from 1 second.
+        Updated the TODO list.
+        (RKD) [apps/repl/repl.ss,apps/edit/edit.ss,src/swl/dialog.ss,
+               src/swl/teventloop.ss,Todo]
+
+02/16/99 (adding files) Added abxstart/rc directory and contents.
+        (RKD) [abxstart/rc (new directory)]
+
+02/16/99 (bux fix, build changes) Eliminated inclusion of config.scheme in
+        boot file and changed definition of swl:version in Makefile.vc to
+        assignment (as in Makefile) so that only swl:version is defined at
+        run time (fixes bug with (import scheme), since scheme is defined
+        in config.scheme).
+        (RKD) [Makefile.vc, src/swl/make.ss]
+
+02/15/99 (new feature, cleanup) Added abxstart directory/program from
+	Wally @ Abstrax.  This program can be used to start up SWL under
+	Windows with the console window hidden.  Added build of abxstart
+        under NT.  Made changes to support "make clean" and
+        "make reallyclean" under Windows.  Also added path line to
+        generated swl.bat to add dir containing Tcl/tk DLLs.
+        (RKD) [abxstart (new directory), Makefile.vc, Mf-cleanlib.vc (new),
+        configure.ss, src/swl/Makefile.vc, README.INSTALL]
+
+02/13/99 (clean up) Changed "``File''" and "Font..." on inspectview to
+        "File" and "Font".  Taught profview about $profile-dump and added
+        a brief comment on usage to top of proview.ss.  changed "System
+        Manual" to "User's Guide" in documentation index.
+        (RKD) [apps/inspector/top.ss, apps/profview/profview.ss,lib/index.html]
+
+02/12/99 (clean up) Updated top-level README files README and README.INSTALL.
+        README.NT is now gone.  Also made animal.ss NT-friendly
+        in where it finds a temp directory into which to store its database
+        and made it start up upon load like the other tutorials.
+        (RKD) [README,README.INSTALL,README.NT (flushed),tutorial/animal.ss]
+
+02/12/99 (cvs fix)  Removed obsolete src/swl/{paxcc,foreign-tk42.c}.
+        (OW)  [src/swl/paxcc, src/swl/foreign-tk42.c]
+
+02/12/99 (build changes) Fixed configure script for i3nt to produce
+        progra~1 in place of Program Files so as not to confuse linker.
+        (RKD) [configure.ss]
+
+02/12/99 (simplification) Minor simplification to how SWL decides if it's
+        running under Petite Chez Scheme (look at system value of
+        \#compiler-is-loaded?).  also altered appearance of splash screen
+        slightly.
+        (RKD) [src/swl/teventloop.ss]
+
+02/12/99 (build changes) TCL version and library information is now
+        set only in configure.ss, i.e., no longer in Makefile as well.
+        most people should now have to modify only configure.ss, if
+        anything.  generating shared libraries is now separated into
+        two distinct steps: running CC on the source files followed
+        by LD on the object files.  we must now set LD and LDFLAGS
+        in configure.ss for each machine type.  In many cases, LD
+        can be the same as CC.  Makefile.vc still needs to be updated.
+        also reinserted the file win32.c and the foreign procedure
+        declaration of swl:open-dde-file in foreign.ss, neither of
+        which had been added properly.
+        (RKD) [Makefile,Makefile.vc,configure.ss,
+               src/swl/Makefile,src/swl/Makefile.vc,
+               src/swl/paxcc (flushed),
+               src/swl/win32.c (added again),
+               src/swl/foreign.ss]
+
+02/11/99 (bug fix)  Removed a few recently fixed items from the Todo list.
+        Fixed keyboard menu posting and updated both documentation and
+        tutorial.  Fixed documentation macros so that menu documentation will
+        be included in the SWL reference (ie. all the various menu items).
+        Used the underline mechanism for keyboard posting of menus in html
+        viewer as well.
+        (OW)  [Todo, apps/htmlview/htmlview.ss, src/swl/base2.ss,
+               src/swl/documentation.ss, src/swl/menu.ss,
+               src/swl/syntax.ss, tutorial/menu.ss]
+
+02/11/99 (bug fix)  Now sourcing my patched menu.tcl to fix host of bugs in
+        Tk's menu support under unix.  May still be a few things to work out.
+        Updated the menus of REPL and Editor to underline certain characters
+        so these items can be selected easily via keyboard.  For some reason,
+        SWL is interfering w/ Tk's automatic support for these accelerators
+        on the menubar (toplevel's menu), though they work fine once a menu
+        is posted.  Trying to set bindtags on toplevel's to see if that
+        fixes the problem.  Added a "Load + (cd)..." item to REPL's menu so
+        we can load a file and change to the directory where the file lives.
+        Added quick-and-dirty swl:with-library-file to alter user to errors
+        locating library files (uses ugly default Tk dialogs under unix,
+        but probably uses something prettier under Windows).  Added quick
+        description of the some Tk menu problems I fixed/noticed.
+        (OW)  [ChangeLog, description, edit.ss, frame.ss, init.ss,
+               menu.tcl, repl.ss, teventloop.ss]
+
+02/10/99 (bug fix)  Fixed bug introduced on 02/09/99 in handling of
+        swl:application-menu items.  Failing to fork a new application
+        around the call to new-repl had the effect that REPLs forked from
+        the application menu could easily get their begin-exp mark out of
+        sync.  This manifested as an emacs-looking bug where you hit return
+        and it's reading the previous expression, or the > prompt, or the
+        error message you just got.  While testing other things, noticed
+        that ill-behaved callbacks can hang up the system.  This means the
+        separate fallback queues are not getting used somehow, which suggests
+        another problem with thread-paramter grouping.  (I'm sure this used to
+        work back when I first added separte fallback queues.)
+        (OW)  [src/swl/teventloop.ss]
+
+02/10/99 (bug fix)  Fixed long-standing SWL bug where command-line load
+        of file that raises error during load command line caused a thread
+        system panic.  Had violated thread system assumption that all eval
+        was done w/in a new-cafe.  Need to verify that my tricks restored
+        the correct waiter-prompt-and-read.
+        (OW)  [src/swl/teventloop.ss]
+
+02/10/99 (new feature)  Added a "Load..." item to the REPL's "File" menu.
+        (OW)  [apps/repl/repl.ss]
+
+02/09/99 (work in progress)
+        With stock Tk8.0.4 on unix, we can't invoke a non-cascade menu item
+        of a toplevel's menubar.  I have a patch for this started in lib/menu.tcl.
+        There is currently tons of debugging output in there so I can figure
+        out what it's doing.  Added test code holding area in ./test
+        (OW)  [lib/menu.tcl, test/Tk/tkbug, test/htmlview/BUG,
+               test/htmlview/bad-inspect.html]
+
+02/09/99 (bug fix)  Fixed a few typos that seem to have been introduced in
+        the process of merging Kent's changes in.  URl-type -> URL-type.
+        URL-string -> URL->string.  Not sure how these got in there, but
+        it does make me wonder about cosmic rays.  Changed <menubutton>
+        to <option-button>, but haven't been able to test the code yet.
+        (OW)  [apps/netport/html.ss, apps/netport/np.ss]
+
+02/09/99 (updated code)  Updated the applications and tutorials to cope with
+        the change to Tk's native menu code.  Unfortunately Tk's menu code is
+        broken in different ways on unix and Windows, so I've developed a
+        patched version of tk8.0.4/library/menu.tcl that we can distribute
+        with SWL (and load upon startup).  Couldn't resist tweaking the TM
+        simulator a little (not extensively tested).  Changed REPL to use
+        Alt+q to exit for consistency w/ Editor.  Removed 'white background
+        setting on the REPL's output markup because it caused cut and paste
+        selection to look very strange.  REPL was using a canvas to do the
+        traffic light, but this isn't supported in a menubar, so now using
+        precomputed static images.  Added notes in the Todo list.
+        Trashed Johnz's cute worrier image since Windows menu display code is
+        so broken (maybe Wally will fix their menu code).
+        Using <option-button> for the file tab in visual interpreter.
+        (OW)  [apps/automata/tm.ss, apps/common/fontmenu.ss,
+               apps/common/worrier.ss, apps/design/design.ss,
+               apps/htmlview/htmlview.ss, apps/inspector/top.ss,
+               apps/inspector/widgets.ss, apps/lecture/lecture.ss,
+               apps/netport/np.ss, apps/repl/repl.ss, apps/repl/repl.ss,
+               apps/vinterp/vinterp.ss, src/swl/documentation.ss,
+               lib/redlight.gif, lib/repl.html, lib/grnlight.gif,
+               tutorial/guide.ss, Todo]
+
+02/09/99 (new feature)  Removed swl:register-application.  That functionality
+        is now provided by swl:application-menu (defined using case-lambda).
+        Added a similar facility, swl:help-menu, for help menus.  The old
+        code was actually consing up a fresh list of applications each time
+        a menubutton was pressed.  The new code updates all relevant menus
+        when a new application is registered.
+        (OW)  [teventloop.ss]
+
+02/09/99 (bug fix)  When destroying an editor with unsaved contents, we now
+        deiconify it and raise it to the top of the stacking order so that
+        the user can tell what buffers contents are not saved.  Now setting
+        the title of the editor to reflect the current filename also in the
+        case where it is invoked as (new-edit <filename>).  The dialog warning
+        about unsaved buffers now prints the filename if known.
+        Fixed bug in show method of <toplevel> where I forgot that the window
+        manager doesn't have to invoke my hide method (hence internal state
+        was out of sync, solved by using tcl-eval 'winfo 'ismapped).
+        Using swl:sync-display to ensure get-width / get-height do something
+        useful when we want to center the warning dialog over a window.
+        (OW)  [apps/edit/edit.ss, src/swl/frame.ss]
+
+02/09/99 (bug fix)  No need to include porthack.ss unless we're building
+        on Windows.  Avoided using this under unix.
+        (OW)  [src/swl/porthack.ss]
+
+02/09/99 (bug fix)  Changed the implementation of swl:console-error-port so
+        that it doesn't create the toplevel display window until it has to.
+        (OW)  [src/swl/init.ss]
+
+02/09/99 (bug fix)  Renamed sync-display to swl:sync-display and made it invoke
+        Tk's "update idletasks" command.  This is needed, for example, in cases
+        where we want to get the width of a widget but need to flush it to the
+        display first.
+        (OW)  [apps/common/popup.ss, apps/common/scrollframe-m.ss,
+               apps/common/warning-dialog.ss, apps/design/popup.ss,
+               apps/inspector/top.ss, apps/netport/np.ss,
+               apps/repl/repl.ss, src/swl/base2.ss, src/swl/frame.ss,
+               src/swl/init.ss, src/swl/teventloop.ss]
+
+02/07/99 (bug fix)  It should now be possible to have menu items with both
+        title (image or string) and accelerator (a string).
+        Added note in todo list about the need to trash the raw-check code
+        for menus.  Also fixed bug in <option-menu> --- set-title! now sets
+        the value of the Tk variable controlling the selected status of the
+        radio button menu items.  Also "fixed" bug due to circular dependency
+        that broke because classes are macros (added isa-option-button?).
+        (OW)  [menu.ss, dialog.ss, Todo]
+
+02/07/99 (incompatible change)  Moving to Tk's native menu support because SWL
+        menus are now broken running on Windows under Tk 8.0.4 (used to work
+        with Tcl/Tk 7.6/4.2).  Removed the <menubutton> class.  Added a menu:
+        create option to the <toplevel> class.  Added an <option-button> class
+        for use by swl:font-dialog.  Updated swl:font-dialog to use the new
+        class --- this cleaned up the code somewhat.  Documentation is lacking
+        for the new class.  Next, need to work through tons of SWL app code to
+        eliminate use of <menubutton>.  Updated comments in Todo and base2.ss.
+        Added definition of with-values to syntax.ss.
+        (OW)  [Todo, base2.ss, button.ss, dialog.ss, documentation.ss,
+               frame.ss, menu.ss, syntax.ss, tutorial/menu.ss]
+
+        Notes (need better place to log these)
+          * oops, intended to commit this on a CVS branch, but hit the trunk.
+          * verified that this change was worth it:
+              - menubutton's don't work as expected under Windows
+              - menubar works well under Windows except that checkbutton
+                and radiobutton menu entries do not correctly display their
+                indicators (yes, -indicatoron is 1)
+              - unix menubar code is broken, but it looks like I have hope
+                of fixing it:
+                  - command / checkbutton / radiobutton menubar entries
+                    cannot be invoked either via mouse or keyboard traversal
+                    (fixed this one easily in library/menu.tcl)
+                  - checkbutton / radiobutton menubar entries draw oversized
+                    indicator (no hope to fix this at the script level, but
+                    since it doesn't seem portable to Windows, no great loss)
+                  - following sequence assumes menubar containing cascade
+                    item labelled Edit and command item labelled BUG:
+                      1) click on Edit
+                      2) use arrow keys to activate BUG
+                      3) hit spacebar to invoke
+                           ==> Edit menu is unposted,
+                               but BUG's command not invoked
+                      4) without moving mouse (ie. still over Edit), click
+                         mouse buttons
+                           ==> Edit menu will not post until mouse is
+                               moved (activating the item)
+                               [best to test this w/ a trackpad because
+                                it separates buttons from motion]
+                    (working on a fix)
+
+02/07/99 (minor reorg)  Moved two void definitions from frame.ss to init.ss.
+        Added some notes to the Todo list.
+        (OW)  [frame.ss, init.ss, Todo]
+
+02/06/99 (bug fix)  Had forgotten about #!bwp in the follower code.  Fixed.
+        (OW)  [frame.ss, Todo]
+
+--- 0.9t ---------------------------------------------------------------------
+
+02/05/99 (updates)  Added more to the Todo list.  Changed references to
+        Tcl/Tk 7.6/4.2 to 8.0 in README.NT.  Slightly modified the ghastly
+        splash screen and reduced the delay before removing the window.
+        Started a FAQ in faq.stex.  Updated ChangeLog with tons of changes.
+        (OW)  [Todo, README.NT, teventloop.ss, splash.gif, faq.stex,
+               ChangeLog]
+
+02/05/99 (new features)
+        Added a new swl:font-dialog procedure to replace the old font-menu
+        code.  Added hooks (add-follower, remove-follower, on-destroy)
+        to <toplevel> class so that an open font dialog can be removed
+        when the underlying application is closed (need this because the
+        dialog is not modal).  Added a new style option for <menubutton>s
+        that affects their display and the posting of their menus.
+        Added swl:font-families procedure to list the available font families.
+        Used this in the font dialog code.
+        (OW)  [dialog.ss (added), frame.ss, button.ss, make.ss, option.ss,
+               src/swl/Makefile, src/swl/Makefile.vc]
+
+02/05/99 (incompatible change)  Moved to Tcl/Tk 8.0.4 and replaced old <font>
+        class with hopefully more portable code (see documentation for <font>).
+        The make-font macro has been changed and is now used only to override
+        specific values of a given font.
+        Removed the font-menu code from apps/common/fontmenu.ss (via #!eof).
+        Updated applications and tutorials to comply with the new font code.  
+        Removed some tabs from edit.ss.
+        Removed foreign-tk42.c.
+        Made swl:file-dialog sensitive to (current-directory).
+        (OW)  [apps/inspector/hooks.ss, apps/inspector/inspector.ss,
+               apps/inspector/top.ss, automata.ss, design.ss,
+               edit-text.ss, edit.ss, fileview.ss, fontmenu.ss,
+               fontmenu.ss, foreign-tk42.c, foreign.ss, frame.ss,
+               generics.ss, html-text.ss, lecture.ss, np.ss, option.ss,
+               repl.ss, syntax.ss, tutorial/animal.ss, tutorial/label.ss,
+               view.ss, warning-dialog.ss]
+
+02/05/99 (bug fix)  Editor now backs up existing file when doing
+        "Save As".  (new-edit <path>) now records <path> as the
+        current path (so that Save actually works).  Converted
+        editor's unsightly help menu into an unsightly html file.
+        Fixed html typos in repl.html.
+        Converted visual inspector's help menu to an html file.
+        (OW)  [edit.ss, edit.html (added), repl.html, inspect.html]
+
+02/05/99 (name change)  Renamed screen-width and screen-height to
+        swl:screen-width and swl:screen-height.  Updated other code
+        to reflect the change.
+        (OW)  [base2.ss, frame.ss, teventloop.ss]
+
+02/05/99 (bug fix)  Fixed bugs in url-history list of html viewer for
+        documents without titles.  Changed the representation of cache keys.
+        (OW)  [htmlview.ss, html-text.ss]
+
+02/02/99 (build changes) updated various make/configuration files to
+        support building of a boot file containing the base code in
+        src/swl plus the edit, htmlview, and repl apps.  updated make
+        files for tk8.  updated Windows make files.
+        (RKD) [Makefile,Makefile.vc,configure.ss,src/oop/Makefile.vc,
+        src/swl/Makefile,src/swl/Makefile.vc,src/swl/make.ss]
+
+02/02/99 (bug fix) prune-broken-weak-pointers! no longer assumes that
+        the list won't be empty.  Reported by Bob Burger.
+        (RKD) [src/threads/threads.ss]
+
+02/02/99 (enhancement?) added support for bringing up the user's default
+        browser for SWL/Scheme documentation, in place of htmlview, under
+        Windows, until htmlview grows up.  Used code from Wally to
+        find and invoke browser.
+        (RKD) [src/swl/foreign.c,src/swl/win32.c (new), src/swl/foreign.ss,
+        teventloop.ss,apps/htmlview/htmlview.ss]
+
+02/02/99 (bug fix) removed misguided conversion of delete to backspace.
+        (RKD) [src/swl/event.ss]
+
+02/02/99 (enhancement) added execute button to editor.  to get reasonable
+        source information, execute first saves then loads.
+        (RKD) [apps/edit/edit.ss,apps/edit/edit-text.ss]
+
+02/02/99 (bug fix) use SWL_TMP or TMP or TEMP env variable, and failing
+        that, ., in place of /tmp for gif loading in htmlview.
+        (not sure we shouldn't be using /tmp still under unix)
+        (RKD) [apps/htmlview/html-text.ss]
+
+02/02/99 (bug fix) tried to improve url parsing under Windows.  Still
+        needs work.
+        (RKD) [apps/htmlview/html.ss]
+
+02/02/99 (enhancement?) eliminated faint yellow highlighting of repl
+        prompt/input.  added check in file-position in repl port to
+        signal an error on attempts to reposition.
+        (RKD) [apps/repl/repl-text.ss]
+
+01/31/99 (bug fix)  Always close source output port (sout) when processing
+        a \schemeoutput[mode]{filename} directive.  This fixes bug where
+        output wasn't showing up in subsequent append when original port
+        was left open:
+           \schemeoutput{file1}
+           % forgot to close file1
+           \schemeoutput{file2}
+           \schemeoutput{}
+           \schemeoutput[append]{file1}
+             % stuff here wasn't showing up in file1
+           \schemeoutput{}
+        (OW)  [scheme-prep.ss]
+
+01/30/99 (clean up)  Merged other from home workarea:  now withdrawing the
+        default Tk toplevel window (".") earlier in the initialization process
+        hoping to prevent it from popping up visibly.  Now setting the console
+        error port to the initial swl:error-log-port so that background errors
+        in fallback threads don't splash on the tty console.
+        (OW)  [init.ss, teventloop.ss]
+
+01/30/99 (clean up)  Merged changes from home workarea:  generated build-script
+        now uses (let () ...) rather than (begin ...) so that the definitions
+        in the generated config.scheme are not global definitions.
+        (OW)  [Makefile, configure.ss, src/swl/make.ss]
+
+01/17/99 (bug fix)  Now generating newline after the initial \schemelinestart
+        so that the following doesn't bomb with \schemelinestartFOO undefined:
+           \schemedisplay
+           FOO
+           \endschemedisplay
+        Also now support \raw{...} following a \schemedisplay (previously
+        supported only \label{...}.
+        (OW)  [src/dc/stex/scheme-prep.ss]
+
+01/08/99 (bug fix)  Added missing '<' in definition of \item command within
+        the description environment used by the html backend.
+        (OW)  [src/dc/stex/html-prep.tex]
+
+11/09/98 (bug fix)  Updated documentation compiler so that html backend
+        understands \"{<letter>} for umlauts and \c{<letter>} for those
+        French whips on letters.
+        (OW)  [src/dc/stex/html-prep.ss]
+
+11/03/98 (incompatible change)
+        Stripped out the module macro from syntax.ss.  This ties us to
+        Chez Scheme version >= 6.0, although we could easily have moved
+        the macro definition into a compatibility file.  The thought was
+        that we should (soon) consider ourselves free to use the full
+        module system and worry about compatibility later.
+        (OW)  [syntax.ss]
+
+10/29/98 (bug fix)  Fixed call to error w/ incorrect number of args.
+        Brought visual interpreter up-to-date wrt. the Chez Scheme v6.0
+        source representation.
+        (OW)  [option.ss, vinterp.ss]
+
+10/27/98 (bug fix)  Now catching file-position request in repl's generic
+        port.  Not sure it's returning anything useful.  Minor cleanup of
+        configure.ss.  Seems to limp along somewhat even with Tcl/Tk 8.0.
+        Added dependency on config.make for the shared library.
+        (OW)  [repl-text.ss, configure.ss, ./Makefile, ./src/swl/Makefile]
+
+--- 0.9s ---------------------------------------------------------------------
+
+07/10/98 (bug fix)  Numeric keypad enter key now works in repl:  the repl was
+        explicitly checking for #\newline and #\return in the key-press method,
+        this has been moved to the insert method (integrating with paste fix
+        from 7/9/98) since there are other (inherited) key-press sequences
+        that generate newline (eg. ^J and ^M).  Removed "input not allowed here"
+        mini-buffer error message from repl.  Now warping cursor to end of
+        the user input area when input is attempted while cursor is not in
+        the user input area.
+        (OW)  [repl-text.ss]
+
+07/09/98 (bug fix & feature change)  swl:error-log-port window is now raised
+        when mapped in hopes of getting it into view.  Not immediately clear
+        how to keep this window on top of the stacking order (since we don't
+        have access to a toplevel for which it can be transient).
+        Also modified make-font macro so that it attempts to substitute for
+        the specified font if it cannot be found.  Will rip this out for Tk 8.
+        (OW)  [init.ss, option.ss]
+
+07/09/98 (new feature)  Modified repl so that using the mouse to paste a
+        selection behaves more like an xterm.  In particular, if the selection
+        ends with a newline (followed by optional whitespace), the repl now
+        acts as if the user had pressed newline.
+        (OW)  [repl-text.ss]
+
+07/08/98 (bug fix)  Documentation generator now correctly includes documentation
+        for methods defined in only one class.  Removed obsolete file "macros"
+        and added a dependency on macros.tex.  Also increased width of the
+        swl:error-log-port window.
+        (OW)  [documentation.ss, src/dc/macros (deleted), src/dc/Makefile,
+               init.ss]
+
+07/08/98 (bug fix)  Fixed install-doc target so that the relevant Makefiles
+        now include config.make (soon to be eliminated when we go to autoconf).
+        This means that the documentation can be built using the specified
+        Scheme compiler.
+        (OW)  [Makefile, src/dc/Makefile, src/dc/stex/Makefile]
+
+07/08/98 (bug fix)  Documentation viewer has been made a full SWL application.
+        Quitting a SWL application does not exit SWL until all other SWL apps
+        have exited.  Also fixed long-standing bug in swl:make-application.
+        It had been a problem to throw out of the application thunk and throw
+        back in.  Now that we're using parameterize to install the
+        swl:fallback-queue we should be ok.
+        (OW)  [htmlview.ss]
+
+07/08/98 (bug fix)  Eliminated use of <flex-toplevel> since that functionality
+        has been moved into <toplevel>.  Waiting to torch the flex-toplvl.ss
+        file until it will cause fewer CVS headaches.
+        (OW)  [apps/common/flex-toplvl.ss, apps/design/design.ss,
+               apps/edit/Makefile, apps/edit/Makefile.vc,
+               apps/repl/Makefile, src/swl/Makefile]
+
+07/08/98 (enhancement & bug fix)  Added swl:error-log-port and
+        console-error-port parameters.  Using these lets us avoid cascaded
+        error in case where a thread running in the repl is generating output
+        when we close the repl.
+        (OW)  [htmlview, repl-text.ss, init.ss, io.ss, make.ss, teventloop.ss,
+               threads.ss]
+           REMOVED:  eventloop.ss (obsolete "Bob" remnant)
+
+07/05/98 (repl fixes and enhancements) Overhauled repl read/write processing.
+	(1) Repl now correctly handles all known prior problems with read:
+	bad char syntax, bad # syntax, bad dot syntax, etc.; multi-line 
+	strings; multi-expression input; user read-char and read input 
+	are all handled correctly (repl multiline editor is disabled
+	for user calls to read, however).
+	(2) Repl now better handles output from multiple threads.
+	(JZ) (repl-text.ss, scheme-text.ss)
+	
+07/01/98 (build change)  Added install-doc target to top-level Makefile.
+         Added targets to clean the documentation directories as well.
+         (OW) [Makefile, src/dc/Makefile]
+
+06/24/98 (bug fix)  Removed top-level-bound check guarding the installation of
+         the require facility.  This had prevented us from having the correct
+         binding in the saved heap since a crufty require workaround is defined
+         when building the heap.
+         (OW) [require.ss]
+
+06/23/98 (enhancement) apps: search can now be aborted during search
+	string entry by pressing the escape key.
+	(JZ) [app.ss, app-text.ss]
+	
+06/22/98 (enhancements & bug fixes) html-viewer: fixed history and widget
+	caching to work independently; history is similar to that of
+	Netscape.  Disabled collapsoid stuff in scheme-text.ss.
+	(JZ) [htmlview.ss, scheme-text.ss]
+
+06/18/98 (enhancement & bug fix) repl: removed colorization of prompt.  
+	Added colorization of user input. Fixed bug in handling of
+	multiple input expressions on same line.
+	(JZ) [repl-text.ss]
+
+06/14/98 (bug fixes) threads: redefined default break handler to be thread
+	 friendly.
+	(JZ) [threads.ss]
+
+06/14/98 (more build changes) updated paxcc to look for tcl/tk libraries in
+         lib/pax rather than bin/pax.  tried again to fix cleaning process
+         so that "make clean" cleans intermediate files, "make reallyclean"
+         also cleans target heaps & libraries, and "make distclean" also
+         cleans out generated document files from lib/ref.  Currently, "make
+         clean" clears out oop.boot by virtue of its being listed as an
+         OBJECT file in src/swl/Makefile; I'm not sure why it's ever put
+         into lib/${m} anyway.  Also, one has to explicitly clean out
+         src/dc and src/dc/stex; not even "make distclean" does that.
+	 (RKD) [Makefile, Mf-cleanlib, apps/edit/Makefile,
+	 apps/htmlview/Makefile, apps/repl/Makefile, src/dc/Makefile,
+	 src/dc/stex/Makefile, src/oop/Makefile, src/swl/Makefile,
+	 src/swl/paxcc]
+
+06/13/98 (build changes) Minor changes to ./Makefile, plus removed swl-help.ss
+         creation from src/swl/Makefile and instead added swl-help as a
+         CVS'd file in ./lib/
+         (RKD) [Makefile, src/swl/Makefile, lib/swl-help.ss (new)]
+
+06/10/98 (build changes) Fixed OW's fix to the "reallyclean" target so that
+         it will work with non-gnu make.  Also removed "# for now" comment
+         from src/swl/Makefile that was producing the files #, for, and now.
+         (RKD) [Makefile, src/swl/Makefile]
+
+06/09/98 (build changes)  Now building repl, editor, and htmlviewer all into
+         the base heap (eventually may have a second level application
+         heap).  Moved swl:register-application calls into teventloop.ss.
+         Modified make.ss to define a temporary require sufficient to get
+         us off the ground when loading applications.  Modified repl's
+         help menu so that it opens html viewer with page that describes
+         key bindings.  Eliminated loading of repl.so, edit.so, htmlview.so
+         in teventloop.ss.  No longer compiling those files via Makefile.
+         (OW)  [Makefile, edit.ss, htmlview.ss, repl.ss, index.html, make.ss,
+                teventloop.ss]
+
+---- release tagged with HPUX-support key -------------------------------------
+
+06/09/98 (bug fix)  Backed out build changes from RKD since gcc was unhappy
+         with arguments like "-O -I/usr/local/include ...".  Realized that
+         the reallyclean target was broken anyway and attempted to fix it.
+         (OW)  [Makefile, configure.ss]
+
+06/09/98 (build changes)  config.make now generated in form that /bin/sh is
+	 happy with (when run as ". config.make").  Added "reallyclean"
+	 target to base Makefile and reorganized so that "clean" cleans
+	 everything not needed to run SWL, and "reallyclean" torches
+	 the rest.  Renamed src/dc/macros as macros.tex to avoid
+	 problem where macros.tex is found in $TEXINPUTS.  Inserted
+	 \par in definition of \schemedisplay to force Scheme displays
+	 to start on a new line.  Need to fix htmlview and html-prep to
+	 suppress extra <p>s.
+         (RKD)  [Makefile, configure.ss, src/dc/Makefile, macros.tex, tspl.hcls]
+
+06/08/98 (bug fixes)  Added base-url to html-viewer history.  Now merging
+         base-url each time we try viewing a url.  Fixed bug in get-string
+         method when it tries to skip over embedded widgets.  It seemed to
+         die when an offset was duplicated in the list of offsets.  This
+         turned up while looking at early draft of TSPL2 html docs.  Also
+         changed location of files built by make process:  renamed bin to
+         lib, creating ref subdirectory for SWL docs, architecture-specific
+         bins go in subdirs of lib, swl-help.ss goes in lib.
+         (OW/RKD)  [htmlview.ss, html-text.ss, help.ss, help-text.ss]
+
+06/08/98 (pax support & bug fixes) added pax support to configure.ss along
+         with paxcc script to get around assumption that cc creates shared
+         objects (as opposed to ld, as on pax).  edited src/swl/Makefile to
+         use ${FORIEGN_OBJ} in place of swl.so, since pax likes swl.sl.
+         also edited src/swl/Makefile to have it create an empty swl-help.ss
+         for now in ${prefix}.  Reordered threads.ss so that errors in
+         set up, e.g., parameters, don't get us into an infinite loop.
+         modified repl-text.ss and threads.ss to support new name
+         trace-output-port for old trace-output parameter.  added HPUX to
+         ifdef in foreign.c.  NOTE: pax seems to think that the middle
+         mouse button is a left mouse button double-click.  This could be
+         bad. (RKD/OW) [src/swl/Makefile, threads.ss, repl-text.ss, foreign.c,
+         paxcc (new)]
+
+06/01/98 (bug fix)  Restored changes lost in bizzare CVS screwup.
+         (OW)  [text.ss, teventloop.ss]
+
+05/27/98 (enhancement) added go menu to HTML viewer.  Cursor 
+	movement/placement is enabled in viewer while text entry/modification
+	Modified insert-widget-at method to accept widgets that
+	are parented by an ancestor of the text widget (since Tk accepts them).
+	is disabled. (JZ)  [htmlview.ss, html-text.ss, text.ss]
+
+05/24/98 (bug fix) corrected problem in text widget method real-get-char
+  	left over from my botched attempt at fix in 1995.  The Tk text
+ 	widget appears to place an extra newline character in the buffer
+ 	between the last user-visible character and the end mark.  This is
+ 	true even if the user explicitly ends the last visible line with a
+ 	newline. So the internal representation of the text is always one
+ 	(newline) character longer then the visible representation. Calls to
+ 	get-string with 'end as 2nd index must take the final newline into
+ 	account. Strangely, insert-at with index 'end does not insert
+	past the final newline (i.e., it does the right thing).
+	(JZ) [text.ss]	
+
+5/23/98 (enhancement) Repl: The box and paren balancing now work for regions
+	above the entry area.  The insertion cursor may now be moved
+	incrementally (up, down, left, right) above the entry area
+	(permits scrolling or character counting using the cursor 
+	as an aid).
+
+	Text searching (Ctrl+r, Ctrl+s) now works in the Repl and in
+	the HTML viewer, as well as the editor (all three inherit searching 
+	code from app-text.ss). 
+	(JZ) [app.ss, app-text.ss, edit.ss, edit-text.ss, scheme-text.ss, 
+	repl-text.ss, repl.ss, htmlview.ss, html-text.ss]
+
+05/22/98 (error detection)  Added egregious hack to report error when someone
+         tries to define a sub-class without first defining the base class.
+         (OW)  [class.ss]
+
+05/20/98 (enhancement, bug fix) fixed editor search feature to pack widgets
+	horizontally (not as jarring).  Fixed editor search boundary bugs.
+	Colorized repl prompt for easier finding. Fixed several bugs
+	in html viewer. [repl-text.ss, edit-text.ss, htmlview.ss]
+	
+05/19/98 (bug fix)  Added missing bounds check in move-char method of <entry>.
+         This fixes the reported bug where moving too far left in an <entry>
+         generates error messages.
+         (OW)  [entry.ss]
+
+05/16/98 (feature change)  Several methods of the <text> widget were expending
+         effort to construct a new text index of the same type as one of their
+         arguments.  There was no point.  It makes more sense to return pairs
+         instead, since they're the most natural Scheme objects representing
+         positions in the text widget.  The implementation and documentation
+         of these methdos has been updated to reflect this change:
+            add-offset, word-start, word-end, line-start, line-end
+            ** Potential incompatibility.
+        (OW)  [text.ss]
+
+  05/06/98 (enhancements and fixes) multitudinous changes to html viewer,
+	minor changes to threads, repl, editor. [teventloop.ss, threads.ss.
+	repl.ss, repl-text.ss, scheme-text.ss, help.ss, popup.ss, htmlview.ss,
+	html.ss, www.ss]
+
+oops.  4/29/98 change breaks ability of subclass to override event-notify
+       methods of <markup>.  I'm not sure I care much since they can be
+       overridden dynamically anyway.
+
+05/04/98 (bug fix)  Changed error message for parameterized error-handler used
+         when loading repl.so and edit.so.  It had assumed that these files
+         would not cause errors when loaded.  Now reports error messages.
+         (OW)  [teventloop.ss]
+
+04/29/98 (optimization)  Complete rewrite of <markup> event handling.  Used to
+         do "text tag bind" for each event of each markup.  This was killing
+         performance of things like the HTML viewer.  Now we create one text tag
+         with tag bindings per text widget (rather than one per markup).  The
+         callback bindings for that tag simply determine which SWL markup was
+         supposed to get the event (and what event it should be) and then send
+         the appropriate message to the SWL markup.  In the HTML viewer this
+         change alone produced a savings of about 43% for one particular table.
+         (OW)  [text.ss, markup.ss]
+
+04/29/98 (optimization)  Applying an instance of <markup> now generates a single
+         Tcl/Tk call to set all the text attributes.  Easy change but it doesn't
+         seem to buy us much.
+         (OW)  [text.ss, markup.ss]
+
+03/18/98 (bug fix) fixed repl so that successive flash-the-box keystrokes
+ 	don't crash the system. (JZ) [scheme-text.ss]
+
+03/17/98 (enhancement) added text wrap toggle to repl preferences menu.
+	 (JZ) [repl.ss]
+
+02/06/98 (clean-up)  Substantially revised process of generating documentation.
+         Currently not finished, but looks promising.
+         (OW)  [src/dc/Makefile, src/dc/Todo, dc.ss, href.stex, prep.ss,
+		ref.macros, ref.stex, base1.ss, base2.ss, button.ss,
+		canvas.ss, canvasitem.ss, documentation.ss, entry.ss,
+		event.ss, foreign.ss, frame.ss, image.ss, label.ss,
+		listbox.ss, markup.ss, menu.ss, option.ss, proto.ss,
+		scale.ss, scrollbar.ss, selection.ss, syntax.ss,
+		teventloop.ss, text.ss]
+
+02/05/98 (clean-up)  Eliminated temp-file hack previously used in first
+         pass of documentation compiler.  Now preprocessing entire file
+         with output to a string port.  Could improve by wrapping with a
+         generic port that calls the preprocessor to fill its buffer.
+         This is pretty fast as it is.
+         (OW)  [dc.ss]
+
+02/06/98 (hack)  Temporarily restored <font> setters (see 02/04/98) since I
+         still need to hunt down and eliminate all places where we were using
+         them.
+
+02/04/98 (feature change) Deleted the following <font> methods since the
+         changes they make only affect the <font> object (and are not in
+         general visible to widgets using the <font> object).
+         Deleted methods:  set-foundry! set-family! set-weight! set-slant!
+                           set-setwidth! set-points!
+         (OW)  [option.ss]
+
+02/04/98 (bug fix)  Extensive revision of the prep/hprep latex/html document
+         processing tools and the dc documentation compiler.  We now get
+         reasonable looking documentation (dvi & html) out of the process.
+         Some delightful bugs were cases where class names such as <font>
+         and <menu> were interpreted as HTML code by netscape.
+         Next step is to enrich api-syntax, api-procedure, etc. so they can
+         generate the formdef automatically.
+         (OW)  [dc.ss, prep.ss, hprep.ss, preplib.ss, preplib.stex,
+                src/dc/Makefile, etc.]
+
+02/03/98 (bug fix)  Corrupt use of symbols with swl:tcl-eval in require.ss
+         was exposed by bug fix of 10/20/97.  This was causing the load of
+         vinterp.ss app to fail with error message from > saying that } was
+         not a number.  Commented out code in vinterp.ss that loads vinspect
+         (which seems to have been broken recently as well).  The latter is
+         a temporary fix so that Carl can get off the ground.
+         (OW)  [require.ss, vinterp.ss]
+
+11/12/97 (bug fix)  Changing print radix could break <text> xy->index,
+         cursor manipulation and get-char methods, <entry> x->index method,
+         <listbox> y->index method, the various {unit}->pixels procedures,
+         <font> objects, swl:splash-screen.
+         (OW)  [text.ss, foreign.ss, option.ss, edit.ss, listbox.ss,
+                teventloop.ss]
+
+11/04/97 (new feature)  Added {set,get}-destroy-request-handler{!,} for the
+         <toplevel> class.  If the destroy-request-handler returns truish,
+         the toplevel window is destroyed when destroy method is invoked.
+         Otherwise it survives.
+         (OW)  [frame.ss]
+
+11/04/97 (new feature)  Added apps/common/scrollframe.ss to the default SWL
+         image.  Still need to fix the bugs in scrollframe (and document it).
+         (OW)  [make.ss, src/swl/Makefile]
+
+--- 0.9r ---------------------------------------------------------------------
+
+11/03/97 (name change)  Renamed index->offset and offset->index functions
+         used by scheme-text and clients as st:index->offset and
+         st:offset->index.
+         (OW)  [scheme-text.ss, edit.ss, design.ss, repl.ss]
+
+11/03/97 (bug fix)  Patched around race condition that affects <markup>.
+         Tk notifies us with a mouse-leave message when we remove a <markup>
+         from a <text> while the mouse is over a range with that <markup>.
+         When we remove a <markup> the <text> widget drops its reference to
+         the <markup> if there are no remaining ranges with the <markup>.
+         The collector then calls the destroy method on the <markup>.
+         Although rare, it is possible for the notify message from Tk to arrive
+         after the collector has destroyed the <markup> instance.
+            ** Tk incompatibility:
+            **   we do not guarantee that the mouse-leave method will be
+            **   called when a <markup> is removed while under the mouse
+         (OW)  [markup.ss]
+
+10/20/97 (bug fix)  Fixed bug in tk->font.  Was miscalculating substring
+         index when given malformed font.  This code is going to change anyway
+         for Tk 8.0, but fixed it anyway.
+         (OW)  [option.ss]
+
+10/20/97 (bug fix)  Fixed bugs in generic-scheme->tcl and string->color.
+	 Symbols that contain "special" characters such as #\space (and
+	 the usual set of Tcl-active chars) were causing problems when used
+	 to represent colors such as '|peach puff|, for example.
+	 string->color was also broken because it assumed whitespace
+	 could not appear in input string.
+         (OW)  [tkstream.ss, option.ss]
+
+--- 0.9q ---------------------------------------------------------------------
+
+9/26/97 (bug fix)  SWL system menu on repl and editor could be orphaned.
+        This sequence of events showed the bug:
+          1. press mouse on SWL menubutton
+          2. holding button down, move mouse over SWL menu itself
+          3. now move mouse back over SWL menubutton
+          4. still holding button, move mouse over another menubutton
+          ** the SWL menu stays posted!  oops.
+        The problem was that the SWL menubutton's action is to assign a
+        new menu to the button and then show the menu.  This action is
+        called each time the mouse enters the menubutton.  Normally this
+        isn't a problem, but the set-menu method was broken because it
+        did not first unpost any existing menu and this could leave things
+        in an indeterminate state. 
+        (OW)  [button.ss]
+
+9/26/97 (bug fix) design: made current with SWL 0.9q
+	JZ [design.ss, auxread.ss, dm.ss]
+
+	(bug fix) edit: when file is opened, cursor is now placed at 
+	beginning of buffer. 
+	JZ [edit.ss]
+	
+9/25/97 (bug fix) repl: Alt+d was broken.
+	JZ [repl-text.ss]
+
+	(bug fix) repl: using history caused crud to accumulate at
+	end of buffer.
+	JZ [repl-text.ss]
+
+	editor: fixed save-file for Windows.
+	JZ [edit.ss]
+
+	editor: fixed Ctrl+d (invokes action-copy).
+	JZ [edit-text.ss]
+	
+	(new feature) editor: minibuf message if font not available
+	(same as in repl).
+	JZ [edit.ss]
+
+9/24/97 (new feature)  Added "About SWL" option to the SWL system menu.
+        Currently just displays the splash screen, eventually should show
+        the SWL copyright notice along with the version information currently
+        displayed by the splash screen.  Should have a dismiss button instead
+        of a timer.  Another possibility is to simply fire up the documentation
+        viewer showing a copyright notice page (need some way to display the
+        version info in that page).
+        (OW)  [teventloop.ss]
+
+9/24/97 (bug fix) Eliminated ^M characters from foreign.c
+        (OW)  [foreign.c]
+
+--- 0.9p ---------------------------------------------------------------------
+
+9/23/97 (bug fix) editor save now works under Windows and Unix. 
+	JZ [edit.ss]
+	
+9/22/97 (bug fix) numerous fixes re inserting and deleting text. 
+	JZ [repl-text.ss]
+
+	tidied up font menu stuff 
+	[fontmenu.ss].
+
+	forced foreground colors of repl and editor to black 
+	[repl.ss, edit.ss]
+
+	Corrected Makefile.vc and configure.ss for Windows.
+
+8/27/97 (bug fix)  The insert method of <text> widget now calls the more
+        general insert-at method to get the job done.  Fixing my SWL bug
+        fixes the apparent editor bug with detecting file-modified status.
+        Still need to propagate this change to other widgets w/ insert and
+        insert-at methods.
+        (OW)  [text.ss]
+
+8/27/97 (bug fix)  Selecting "Exit SWL" from the menu returned by
+	swl:application-menu now invokes the quit-notify thunk
+	(supplied in the call to swl:begin-application) for each of the
+	remaining applications.  In particular, selecting "Exit SWL"
+        no longer torches unsaved Edit buffers.
+        (OW)  [teventloop.ss, apps/edit/edit.ss, apps/repl/repl.ss]
+
+--- 0.9o ---------------------------------------------------------------------
+
+8/23/97 (new feature)  There is now an application registry and a mechanism
+        that applications can use to prevent SWL from exiting while they're
+        still running (unless the user really wants to exit all of SWL).
+
+        (swl:register-application name thunk)
+            Add named application to the application menu or remove if
+            thunk is #f (selecting name invokes thunk)
+
+        (swl:application-menu)
+            Returns an application menu listing apps that have registered
+            via swl:register-application, and an option called "Exit SWL"
+            that exits all the apps immediately.
+
+        (swl:begin-application)
+            Add this application to list of apps that must be exited before
+            SWL exits.  Returns a token.  See swl:end-application.
+            It is an error for an application to invoke swl:begin-application
+            without subsequently invoking swl:end-application.
+
+        (swl:end-application token)
+            If token is 'exit-all, exit SWL immediately.  Otherwise
+            remove from the list of active applications the application
+            granted this token.  If the list is empty, exit SWL.
+        (OW)  [teventloop.ss, apps/edit/edit.ss, apps/repl/repl.ss]
+
+8/23/97 (bug fix)  Instances of <menubutton> now invoke their action
+        when clicked with the mouse.  The default action of a menubutton
+        is to post its menu (if any).  When the left mouse-button is pressed
+        on a menubutton, the invoke method is called.  The default invoke
+        method simply calls the action procedure (set-action! / get-action).
+           Kind of buggy in that you're hosed if you do:
+             (create <menubutton> with ... (action: ...))
+           because you've no way to get at the menu showing code otherwise...
+           maybe should fix
+        (OW)  [button.ss, proto.ss] 
+
+8/23/97 (feature change)  Added new parameter swl:cut-buffer used to emulate
+        the cut/paste behavior of xterm.  NOTE:  clicking middle mouse button
+        now pastes text at the current cursor position, NOT the mouse position
+        as it used to.  See also documentation for swl:cut-buffer.
+        (OW)  [proto.ss]
+
+8/23/97 (bug fix)  Now including Kent's patch to support open-input-file
+        under Windows.  Had been having difficulty with files being open
+        for read preventing them from being written.
+        (JZ, RKD)  [porthack.ss]
+
+8/23/97 (bug fix)  Revised apps/common/fontmenu.ss so that it works under both
+        Unix and Windows.  Seems to have fixed serious bug with some X servers.
+        Temporarily using Tcl/Tk's C interface to determine list of available
+        fonts.
+        (JZ)  [apps/common/fontmenu.ss, foreign-tk42.c, foreign.ss, load.ss,
+               Makefile, Makefile.vc]
+
+8/22/97 (new feature)  Added procedures and methods for manipulating selection
+        and clipboard:
+
+           <selection> --> 'primary | 'secondary
+
+           (swl:clear-selection)                                   procedure
+           (swl:clear-selection <selection>)                       procedure
+
+              clears the specified selection, default is PRIMARY selection
+
+           (swl:get-selection)                                     procedure
+           (swl:get-selection <selection>)                         procedure
+
+              returns specified selection or #f, default is PRIMARY selection
+
+           (swl:clear-clipboard)                                   procedure
+
+              clears the clipboard and claims ownership of the clipboard
+
+           (swl:append-clipboard <string-data>)                    procedure
+
+              appends the given string to the clipboard where it may be
+              retrieved via (swl:get-selection 'clipboard).  Calls to
+              swl:append-clipboard must be preceded with swl:clear-clipboard
+              (though this isn't checked).  Repeated calls to
+              swl:append-clipboard should be carried out in a critical
+              section to prevent another process from retrieving an
+              incomplete clipboard or usurping ownership from this process.
+
+           (swl:get-clipboard)                                     procedure
+
+              Returns the content of the clipboard or #f if none.
+
+           (send <widget> claim-selection <selection> <notify-thunk>)   method
+
+	      Give ownership of the specified selection to <widget> and
+	      notify the previous owner, if any.  <notify-thunk> is
+	      called when the widget loses ownership of the selection.
+
+ ;;  This cannot be supported cleanly (if at all) in our current model
+ ;;  because a fallback cannot compute a value to return to its caller.
+ ;;  We could support it now that Chez Scheme supports true callbacks
+ ;;  into Scheme.  For now I'll wait until everyone is running >= 5.9f
+ ;;
+ ;;        (send <widget> handle-selection <selection> <handler>)       method
+ ;;
+ ;;           Arrange for <handler> to be called when the specified
+ ;;           selection is requested while <widget> owns that selection
+ ;;           or cancel if <handler> is #f.  <handler> is called with
+ ;;           two numbers, offset and count, where offset is the character
+ ;;           offset of the desired region of the selection, and count
+ ;;           is the maximum length string to return.
+        (OW)  [selection.ss]
+        
+8/22/97 (bug fix)  Now providing more instructive error message for
+        syntactic errors such as:  (create <blah> with (cons 1 2)).
+        (OW)  [syntax.ss]
+
+8/21/97 io.ss: nb-io is now a server process; fixes bug which causes
+	console i/o to fail when interrupt is received and nb-io
+	is running.
+
+	threads.ss: several minor fixes.
+        (JZ) [io.ss, threads.ss, base2.ss, teventloop.ss, init.ss]
+
+8/16/97 (bug fix)  menubutton w/ no menu could end up remaining hilighted,
+        or worse, retain a global grab.  Eliminated set-grab in activate-
+        external method in menu.ss since the menubutton we hit may be
+        enabled yet have no menu.  (Tempting to move menu posting code
+        into the default action proc for menu-buttons and force menubuttons
+        with no menu to be disabled.)  Changed <proto-button> activate and
+        deactivate methods so that they have no effect when the button is
+        disabled (as the documentation claimed).
+        (OW)  [button.ss, menu.ss, proto.ss]
+
+8/14/97 (bug fix)  Eliminated bogus "make-instance not bound" error message
+        from object system.  This was resulting from the fact that
+           (make <classname> arg ...)
+        expands into:
+           ((<classname> make-instance <classname>) arg ...)
+        This works fine as long as <classname> is a class macro (when expanded
+        as identifier, introduces reference to secret class binding; when
+        expanded as combination, expands into code needed to make an instance).
+        [is this fancy stuff pointless now that we have cp0?]
+        Anyway, I fixed this in two ways:  first, class macros now recognize
+        quote, so the (make <classname> arg ...) now expands into:
+           ((<classname> 'make-instance <classname>) arg ...)
+        second, I added some code (that is skipped at optimize-level 3)
+        that checks to see whether the class actually is a class.
+        I'd like to make this less expensive (maybe skip test at opt. lvl. >= 2?
+        (OW)  [class.ss]
+
+8/14/97 (bug fix)  Was giving terrible Error messages for (send inst 'msg).
+        Now issuing syntax-error if msg is not an identifier.
+        (OW)  [class.ss]
+
+8/14/97 (bug fix)  Only left mouse button was cancelling the grab in effect
+        when a menu is posted.  Now any mouse button (release) out of bounds
+        of a menu or menubutton also unposts the menu (cancelling the grab).
+        (OW)  [button.ss, menu.ss]
+
+8/8/97  (bug fix)  Modify swl:make-fallback-queue so that it forks a thread
+        rather than a thread-group.  This means fallbacks now see the thread
+        parameters of the application on whose behalf their servicing events.
+        Changed repl.ss so that it doesn't fork off an additional thread group
+        (since swl:make-application forks a thread-group already).
+        (OW)  [teventloop.ss, repl.ss]
+
+--- 0.9n ---------------------------------------------------------------------
+
+8/7/97  (cleanup)  Avoid whacking getenv if present in Scheme image.  Issue
+        warnings for errors encountered as we search for swl.so in the path.
+        (OW)  [configure.ss]
+
+7/25/97 (workaround)  Updated changes from 7/18/97 for Windows NT.  Wrote
+	cat.ss and rm.ss to avoid extreme bogosity of NT's cat, copy,
+	del.  Note that cat.ss and rm.ss are not robust wrt. whitespace
+	within filenames.  New build process works again under Windows
+	NT 4.01.  SWL appears to run under Windows 95 as well.
+        (OW)  [nearly all Makefile.vc's, nt/cat.ss, nt/rm.ss]
+
+7/18/97 (workaround)  Modified SWL build process so that it uses
+        compile-file to construct a SWL boot file.  This will help to
+        work around incompatibility problems of heaps saved on different
+        machines (eg. with different shared libraries).  Binary releases
+        of SWL will now include a boot file that can be used to dump
+        a heap.  As an added bonus, the SWL build process now exploits
+        separate compilation to some degree.
+        (OW)  [src/oop/Makefile{,.vc}, src/oop/class.ss, src/oop/defint.ss,
+               src/oop/dispatch.ss, src/swl/Makefile, base2.ss, event.ss,
+               generics.ss, syntax.ss, threads.ss, configure.ss]
+
+7/18/97 (feature sketch)  Modified the repl to colorize waiter output.  These
+        changes were requested by the c211 instructors, but are commented out
+        for now.
+        (OW)  [apps/repl/repl-text.ss]
+
+7/18/97 (feature change)  new-edit now accepts an optional filename.
+        (OW)  [apps/edit/edit.ss]
+
+7/18/97 (bug fix)  The edit and designer apps now pop up a dialog box to ask
+        whether the file should be saved before exiting.  They had been doing
+        this only for menu or keyboard quit.  Now they do it for window-manager
+        quit as well.  The destroy method of the <flex-toplevel> class now
+        destroys only when the user-supplied destroy method returns #t.
+        (OW)  [apps/edit/edit-text.ss, apps/edit/edit.ss, apps/design/design.ss,
+               apps/common/scrollframe.ss, apps/common/flex-toplvl.ss]
+
+--- 0.9m ---------------------------------------------------------------------
+
+7/10/97 (* user visible name change *)
+        Renamed file->string to swl:file->string.  Removed global definition
+        of file-size.  Renamed get-pos to swl:get-pos.  Left get-x/char and
+        get-y/char as they are for now.
+        (OW)  [image.ss, apps/netport/np.ss, text.ss]
+
+7/10/97 (bug fix)  Removed (set! image #f) from <cascade-menu-item> class.
+        The set! was already being done by the parent class (so the
+        image was collectable), and the image ivar was not inheritable,
+        so we were actually whacking a global variable named image.
+        (OW) [menu.ss]
+
+7/10/97 (cleanup)  Renamed (bug-port) to (swl:bug-port) in application code.
+        (OW)  [apps/repl/repl-text.ss, apps/netport/www.ss,
+               apps/common/scrollframe-m.ss]
+
+7/10/97 (cleanup)  Renamed swl-runtime to swl:runtime.  Eliminated remassoc and
+        remassq since they were unused (remassq now private in text.ss).
+        (OW)  [configure.ss, teventloop.ss, base2.ss, text.ss]
+
+7/10/97 (cleanup)  Renamed lookup-widget to swl:lookup-widget.
+        Renamed delete-widget to swl:delete-widget.  Renamed
+        lookup-fallback-queue to swl:lookup-fallback-queue.  Renamed
+        set-grab to swl:set-grab.  Eliminated unused remove-from-menu
+        methods in menu.ss.  Renamed thedefaultmenu to swl:thedefaultmenu.
+        Not user-visible changes.
+        (OW) [base2.ss, callback.ss, canvasitem.ss, develop.ss,
+              frame.ss, init.ss, menu.ss, proto.ss, text.ss, button.ss]
+
+7/10/97 (bug fix)  Fixed memory leak introduced long ago when I factored
+        <tk-widget> into <tk-prewidget> et. al.  The problem was that only
+        the destroy method of <tk-widget> was calling delete-widget.  Thus
+        <menu> and other widgets were not being deleted properly.
+        (OW) [base2.ss, menu.ss]
+
+7/10/97 (name change) a thread "process" is now called a "thread-group".
+        changed thread-fork-process to thread-fork-group, other
+        names accordingly.
+        (JZ) [threads.ss, base2.ss, init.ss, teventloop.ss,
+              apps/design/dm.ss, apps/repl/repl.ss]
+        
+7/08/97 (cleanup)  Renamed more globals to "cleanup" namespace.
+        (OW) [base2.ss, canvas.ss, canvasitem.ss, entry.ss, image.ss,
+              listbox.ss, markup.ss, menu.ss, option.ss, proto.ss,
+              scale.ss, text.ss]
+
+7/07/97 (workaround)  Added a Makefile variable `cleanup' that specifies a list
+        of macros to be trashed before saving the heap.  At present there is
+        only support for dropping macros defined via define-generic.  The system
+        currently uses lots of generics internally and they really improve the
+        readability of the code.  Since many generics have names that students
+        may want to use (eg. "insert") it's easiest to build a stripped SWL
+        runtime for student use that doesn't have the generics.
+           ** Note that building with cleanup=generics will cause the build
+           ** of repl.so to fail (when you try to run it).  It also breaks
+           ** the tutorials and most SWL apps.  Use it only when providing
+           ** pre-compiled code, eg. for students.
+        (OW)  [Makefile, Makefile.vc, configure.ss, syntax.ss]
+
+7/04/97 (bug fix)  Input or output to a (new-repl) that has been closed
+        caused system failure as it tried to print error message to the
+        same repl output-port that caused the problem initially.  For now
+        I added tests in widget-write / widget-read that check to see whether
+        the repl port still exists before proceeding.  This is still fragile.
+
+        Better fix would be to suspend the offending thread and send an
+        error notification to the system-wide error display system (eg.
+        pop up a dialog box).
+        (OW)  [repl-text.ss]
+
+Should we rename the following?          (my guess)
+  pack    -->  swl:pack                     maybe
+  grid    -->  swl:grid                     trash it unless Erik used it
+  create  -->  swl:create                   no
+  make    -->  swl:make                     no
+
+what to do about generics???
+  - torch them after we're done compiling?
+  - modify SWL / apps / tutorial code not to use generics?
+
+7/04/97 (cleanup)  Renamed or eliminated many more identifiers in effort to
+        clean up global namespace.
+        (OW)  [ChangeLog, dc.ss, base2.ss, button.ss, callback.ss,
+               canvas.ss, canvasitem.ss, develop.ss, entry.ss,
+               event.ss, foreign.ss, frame.ss, image.ss, init.ss, io.ss,
+               label.ss, listbox.ss, markup.ss, menu.ss, option.ss,
+               proto.ss, require.ss, scale.ss, scrollbar.ss, syntax.ss,
+               teventloop.ss, text.ss, tkstream.ss]
+
+7/04/97 (cleanup)  Moved non-essential convenience functions like 'pb' and 'cd'
+        into src/swl/develop.ss since they're mostly used by developers.
+        Eliminated more globals from load.ss and cleaned up load.ss slightly.
+        Fixed dependency in top-level Makefile.
+        (OW)  [load.ss, develop.ss, Makefile]
+
+7/03/97 (cleanup)  Eliminated some globals from implementation of object system.
+        (OW)  [src/oop/dispatch.ss, src/oop/class.ss, base2.ss, canvas.ss]
+
+7/03/97 (bug fix)  SWL should now come up with generate-inspector-information
+        set to #t and optimize-level set to 0.  Fixed this for the builds of
+        oop-heap and swl-heap.
+        (OW)  [configure.ss]
+
+7/02/97 (bug fix)  Fixes for build process under Windows NT.  Renamed swl-ver
+        to swl:version in Makefile.vc to keep it in sync with Makefile.  Now
+        exporting SWL_PeekEvent in foreign.c (tempted to drop SWL_PeekEvent).
+        Moved the call to swl:install-non-blocking-console back where it was
+        supposed to be (avoid broken NT console).  Documented the intended
+        non-use of path-cons to construct Scheme paths in configure.ss.
+        Introduced make variables for some paths that had been hard coded in
+        src/swl/Makefile.vc these can now be edited in the toplevel Makefile.vc.
+        Added README.NT.  Modified repl Makefile to avoid building repl if
+        swl heap is unchanged.
+        (OW)  [Makefile.vc, src/swl/Makefile.vc, foreign.c, configure.ss,
+               README.NT, apps/repl/Makefile]
+
+7/02/97 (bug fix)  Corrected scrollbar / scale behavior.  Now respecting the
+        setting for repeat-delay (the delay after clicking before it begins to
+        repeat).  Fixed race conditions in the scrolling threads.
+        (OW)  [proto.ss]
+
+6/25/97 (bug fix)  transcript-on / transcript-off now work in SWL.
+        Forked threads write to the transcript open when they were forked.
+        When a thread starts a new transcript while another transcript is
+        active, a warning is issued and console I/O for this thread is captured 
+        in the new transcript.  transcript-off ends the transcript only for
+        the thread that invokes it, i.e., other threads writing to the same
+        transcript continue to do so.
+        (OW)  [io.ss, teventloop.ss, foreign.ss, apps/repl/repl-text.ss]
+
+5/27/97 (bug fix)  Fixed really stupid bug in canvas.ss.  Canvas items should
+        once again recieve mouse-enter notification. (OW)  [canvas.ss]
+
+2/28/97 (workaround)  To work around dynamic-wind in the implementation of
+        compile-file in older versions of Chez Scheme, John added a
+        thread-critical-section.  We're now using scheme-version-case to
+        avoid this for Chez Scheme versions after 5.0f for which it is not
+        needed.
+
+--- 0.9l ---------------------------------------------------------------------
+
+2/14/97 (major revision) Incorporating johnz's overhaul of the thread system.
+        (JZ) [base2.ss foreign.c foreign.ss init.ss io.ss load.ss require.ss
+        syntax.ss teventloop.ss threads.ss]
+
+--- 0.9k ---------------------------------------------------------------------
+
+2/11/97 (bug fix)  Menu grab problems are almost cleared up.  In stress testing
+        at home I haven't been able to recreate the problem of menubuttons that
+        end up highlighted at the wrong time.  This used to be pretty easy to
+        show.  Similarly, I'm no longer able to reproduce the old bug where
+        rapid mouse movement could result in events sent to the wrong place
+        (ie. widget under menu used to get mouse-motion events at times).
+        See end of src/swl/menu.ss for description of remaining must-fix bug.
+
+2/10/97 (new feature)  All cursor-movement operations of <entry> widget now call
+        the set-cursor-pos! method to do the actual cursor movement.  (see 2/3)
+        (OW)  [entry.ss]
+
+2/9/97 (bug fix)  Finally read the code and fixed the bug from 1/30 and 1/21.
+       (OW)  [proto.ss, listbox.ss, text.ss, entry.ss]
+
+2/9/97 (bug fix)  Fixed bindings for Page Up/Down and Control-Page Up/Down.
+       (OW)  [listbox.ss]
+
+2/9/97 (feature change)  Removed the select-from, select-to, and select-adjust
+       methods from the <entry> class.  The select-range method should suffice.
+       (OW)  [entry.ss]
+
+2/3/97 (bug fix)  Fixed typo "slection" --> "selection" in a couple places.
+       (OW)  [proto.ss, listbox.ss]
+
+2/3/97 (new feature)  All cursor-movement operations of <text> widget now call
+       the set-cursor-pos! method to do the actual movement as they should.
+       This adds a bit of overhead, but improves the object-orientation of SWL.
+       In practice the hit should not be noticed since cursor-movement
+       input from the user is in geological time with respect to the CPU.
+       (OW)  [text.ss]
+
+1/30/97 (bug fix)  Had missed shift_l and shift_r when fixing the selection
+       bug on 01/21/97.  (OW)  [proto.ss]
+
+1/28/97 (bug fix)  Pressing [Home] key on scrollbar once again scrolls all the
+       way to the top.  Clicking arrows or trough of scrollbar w/ control key
+       pressed once again scrolls to either extreme of the range.  Had been
+       broken unwittingly by the change in event case from keysyms to keycodes.
+       (OW) [scrollbar.ss]
+
+1/24/97 (owaddell)  Fixed bug in src/swl/io.ss that caused the following code
+       to hang for (test 4).  Problem was that port handlers were not reentrant
+       but didn't guard against the dangers of being called by multiple threads.
+       Unfortunately, if you buffer at the port level, then system primitives
+       can bang on your port structure (without going through the port handler).
+       That's a real bonus in the absence of threads, but it ensures that I/O
+       is either slow (no port-level buffering) or its implementation is a bit
+       grungy (and it's still not super fast).
+
+        (define test
+          (lambda (n)
+            (define foo (lambda (x) (thread-sleep 500) (flush-output-port) x))
+            (let ([q (thread-make-msg-queue 'test)])
+              (let loop ([n n])
+                (unless (fxzero? n)
+                  (printf "forked thread ~s~n" n)
+                  (thread-fork-process (lambda () (thread-send-msg q (foo n))))
+                  (loop (fx- n 1))))
+              (let loop ([n n])
+                (unless (fxzero? n)
+                  (printf "thread ~s completed~n" (thread-receive-msg q))
+                  (loop (fx- n 1)))))))
+
+1/24/97 (owaddell)  Fixed totally stupid bug where clicking on the arrow of
+       a scrollbar caused the controlled window to scroll two lines.
+
+1/21/97 (owaddell)  Fixed bug where pressing caps_lock cleared the selection
+       in <text> and <entry> widgets.  There was also an ambiguity in the name
+       of the caps_lock key and modifier.  The key is now distinguished as
+       caps_lock_l (in keeping with control_l, shift_l, etc.).
+
+12/02/96 (owaddell)  Signals such as SIGINT (^C) appear to be ignored while
+       the process is blocked in Tcl_DoOneEvent.  Added a signal handler
+       that inserts a dummy event in the Tcl event queue so that
+       Tcl_DoOneEvent is unblocked when a signal is received.
+
+12/02/96 (owaddell)  Modified initialization code to support saved incremental
+        application heaps.  Modified README to reflect these changes.  Also
+        small bug fixes to Makefile.
+
+--- 0.9j ---------------------------------------------------------------------
+
+12/01/96 (owaddell)  Modified threads.ss, repl.ss, and repl-text.ss so that they
+        actually invoke the exit-handler.  They were just redefining it without
+        bothering to run it on exit (they were extending it without playing
+        fair.)
+
+11/30/96 (owaddell)  Worked around Tcl/Tk platform specific behavior in
+        modifier->bitmap.  Will eventually ask them why the behavior is not
+        consistent.
+
+11/29/96 (owaddell)  Fixed sanity check in callback.ss that was broken by the
+        addition of #!bwp object for broken weak pointers.
+
+11/29/96 (owaddell)  Added include for stdlib.h (again) in foreign.c since
+        Windows NT C compiler needs that for sys_errlist.
+
+11/29/96 (owaddell)  Removed medium skip from formatting of methods by dc.ss.
+        This eliminated the spurious line spacing problems.
+
+11/29/96 (owaddell)  Added build-script and Makefiles for apps/repl/ since
+        that is going to be our default console on NT and Unix.
+
+11/27/96 (owaddell)  Documentation compiler now uses inheritance to find
+        documentation for methods that have no direct documentation.
+        Now prints warning for undocumented methods.  Lots of changes to
+        source for sake of documentation.  Several things removed from API
+        status.
+
+11/26/96 (owaddell)  Removed defunct directories: demos, notes, apps/plot,
+        apps/layout.  Removed threads/{OS.ss,nb-io.ss,sel.c}
+
+11/26/96 (owaddell)  Restored non-blocking console as default under unix.
+        This should help to flush the remaining bugs.
+
+11/26/96 (owaddell)  Worked on cleaning up the format of output from the
+        documentation compiler.  Cleaned up documentation in some places.
+        Added some missing documentation.
+
+11/26/96 (owaddell)  Reimplemented some functionality of the documentation
+        compiler to remove dependency on Carl's inparse package (the source
+        to which I've lost).  Added definition for define-swl-class.  Really
+        should move the application-specific transformers to the application
+        source.  It took me entirely too long to remember that I'd added a
+        define-swl-class abstraction a while back.  That's what truncated
+        the documentation.
+
+11/26/96 (owaddell)  Implemented remaining file-dialog functionality.  Moved
+        it into syntax.ss.  Added tutorial for file-dialog.  Modified the
+        web-browser to use the new socket interface.  Need to track down
+        a bug somewhere in reading binary images.  Stuck a swl: prefix on
+        lots of globals.  Changed the foreign interface for the event loop
+        to save a few instructions in the common case.
+
+11/25/96 (owaddell)  Scrapped yesterday's implementation which used too much
+        C code and looked really ugly.  Now using Tcl scripts for the
+        simple things like creating sockets and doing ioctls.  Grabbing
+        the C pointer for the Tcl channels so I can use the C Tcl_Read /
+        Tcl_Write functions to efficiently implement the generic port.
+        Fixed bug in Carl's implementation of write-char.  Cleaned up
+        lots of my own code.
+
+11/24/96 (owaddell)  Provided an interface to Tcl_OpenTcpClient and
+        Tcl_OpenTcpServer.  Added support for file event handlers.
+        Adapted Carl's non-blocking I/O code to use this new interface.
+
+11/22/96 (owaddell)  Changed apps/common/select-file.ss to use standard Tk
+        file dialogs instead of our hand-rolled stuff.  This means we now get
+        native look-and-feel for file dialogs.  Also we're spared the unix-
+        specific spawn-a-process-to-do-ls hack that I had been using.
+
+11/21/96 (owaddell)  Fixed bugs in the event dispatcher and eliminated
+        nb-io.ss for now.  Will reintroduce it once I get the Tcl_WatchFile
+        support worked in.  Eliminated lots of cruft in the event model
+        (x-connection, x-thread, etc.).  Fixed up foreign code a little.
+
+11/21/96 (owaddell)  Fixed bug in thread-run-queue-idle? (threads.ss) that
+        could have been found by a type checker.
+
+11/20/96 (owaddell)  Drastically revised makefiles.  No longer relies on
+        GNU make features.  Need to test on all the targets.  Need to restore
+        some of the missing functionality (eg. creating the swl scripts).
+
+11/19/96 (owaddell)  Fixed race condition in threads forked for <scrollbar>s
+        and <scale>s.  Also ensured that the appropriate scroll/scale action
+        is performed at least once.
+
+11/19/96 (owaddell)  <menubutton> now unposts its menu if the mouse button
+        is released while over something other than the menu or menubutton.
+
+11/19/96 (owaddell)  <menubutton> unpost-menu and show-pressed methods
+        could do some useless assignments, eg.,
+          (begin                       (begin
+            (when flag ...)       ==>    (when flag (set! flag #f) ...)
+            (set! flag #f)               ...)
+            ...)
+
+11/19/96 (owaddell)  Introduced 'default mouse cursor instead of coercing
+        Tk's "" default cursor notation to 'top_left_arrow (which was not
+        disjoint from the set of actual cursors).  Appropriate translations
+        added to get-mouse-cursor and set-mouse-cursor!.
+
+11/18/96 (owaddell)  panic function used in nb-io.ss now exported by threads.ss
+        This problem arose once we restored Carl's intended scoping.  (Had been
+        commented out.)
+
+11/18/96 (owaddell)  sanitized the events forwarded by mouse-motion method
+        in <menubutton> and <menu> 
+
+11/18/96 (owaddell)  Fixed destroy method for <container-widget> so that it
+        has the desired effect even when the container has no children.
+
+9/29/96 (owaddell)  Modified <text> markups-at method to return '() when no
+        markups are found (used to return #f).  Also changed <markup> method
+        marked-ranged so that it returns '() if the markup is not applied.
+        Thanks to JohnZ for pointing these out.  Incompatible changes.
+
+9/29/96 (owaddell)  Added jashley's consbox.ss example to the apps directory
+        in a fairly random place.
+
+9/29/96 (owaddell)  Hopefully provided a more general solution to problem
+        Wally noticed in destroying <container-widget>s where there
+        could still be configure events pending for containers after
+        they were destroyed.  Since the problem manifested as a fallback
+        whose widget-hanlde has no fallback-queue, we silently drop
+        these bogus fallbacks.  He threw a sync-display in somewhere, but I
+        doubt that actually fixes the problem (probably makes it less likely).
+
+9/29/96 (owaddell)  Substantially improved error checking and reporting
+        for the pack macro (at expand time and run time).  Thanks to Mike
+        for pointing out the problem.
+
+9/29/96 (owaddell)  Verified that panic-op is no longer used in src/swl/*.ss
+        as was the case in the old version Wally is working with.
+
+9/29/96 (owaddell)  Addressed some of Wally's concerns about handling of
+        show and hide (things that were messing up his implementation of
+        a manage macro).  Fixed some bugs with preservation of pack/place/grid
+        options in the process.
+
+9/29/96 (owaddell)  Hacked threads.ss to export call/pk for the benefit of
+        SWL's error handlers.  Thanks to Wally for pointing out problem with
+        our initial stab at resealing the thread system.  Also exported
+        thread-inspect for benefit of repl code.
+
+9/29/96 (owaddell)  Added define-swl-class macro that defines a suitable public
+        class-name method for all SWL classes.  JohnZ suggested it be a public
+        method.  Doing this with a method gives us a handy place to insert
+        other such protocols.
+
+9/16/96 (owaddell)  Fixed bug in canvas.ss where coerce->cbproc hadn't been
+        renamed to procedure->callback.  (this will probably be renamed again
+        when I go hunting globals).  Modified jashley's cons-box viewer to
+        use <scrollframe> and to set-scroll-region!.
+
+9/13/96 (owaddell)  Decided balloon-help isn't ready for prime time, but left
+        it in anyway.  I've burned multiple days playing with it.
+
+9/12/96 (owaddell)  Keyboard traversal improved (had been backwards).
+        Still need to provide some other means for determining the traversal
+        order (currently reflects order of eval -- gack).  Probably add this
+        to geometry manager project.
+
+9/12/96 (owaddell)  Fixed "incorrect number of arguments" bug in <proto-button>.
+        (default action was void instead of (lambda (inst) (void)).)  Amazing
+        that this wasn't caught sooner.
+
+9/12/96 (owaddell)  Replaced "test" version of threads.ss with "production"
+        version.  (Actually, just moved some top-level definitions back inside
+        the local scope of install-thread-system.)
+
+9/04/96 (owaddell)  Caught a nasty bug where destroy method wasn't killing
+        threads that may have been forked to manipulate internal state.
+        Really need to do thorough job of hunting this kind of garbage down.
+        There are still tons of obvious race conditions in the code (proto.ss
+        for example).
+
+9/04/96 (owaddell)  Fixed bugs in apps/lecture/lecture.ss involving parsing of
+        lecture scripts (had bad habit of dropping last slide).  Also fixed bug
+        that permitted pasting into the lecture window (thought that was fixed
+        long ago).  Also changed it so that lecture mode is the default when it
+        comes up.
+
+9/04/96 (owaddell)  Fixed bug in menu.ss that prevented set-menu! from working
+        properly for <cascade-menu-item>s under some circumstances.
+
+8/29/96 (owaddell)  Added support for balloon-help.  Most widgets now support
+        the methods
+           set-balloon-help!
+           get-balloon-help
+        hence the balloon-help: keyword can be used with the create macro.
+        In addition, a parameter swl:balloon-help-delay has been added to
+        control the delay (in ms) before balloon help is displayed for a
+        widget the mouse has entered.
+        the balloon help is currently restricted to text strings (with
+        explicit line-breaks) or <bitmap> or <photo> images.
+
+8/22/96 (owaddell)  For <button>, <label>, etc. the set-title! get-title methods
+        replace the set-image! get-image methods (which have been removed).
+        This makes sense since these widgets couldn't display both a string and
+        an image at the same time anyway.  Also prepares the way for interesting
+        balloon help.  Internally, <image> no longer uses gensyms for handle
+        since Scheme needs to be able to find the <image> instance from the
+        handle it reads from Tk on operations like get-title / get-image.
+           change set-image!  to  set-title!    and remember to
+           change   image:    to    title:
+
+8/20/96 (owaddell)  Finally realized that current implementation of send-base
+        is correct.  The real problem is that send-base should be visible
+        throughout the class definition (not just in method bodies).  So
+        disregard claims elsewhere that send-base doesn't work for protecteds
+        or publics.  It does.
+
+8/16/96 (owaddell)  Modified documentation compiler to include documentation for
+        api-procedures.  Still need to revise the documentation system.
+
+8/09/96 (owaddell)  Fixed bug in scrollframe.ss where notify methods could be
+        called even after the scrollframe was destroyed.  Added a flag, but
+        moved it out of the common code path.
+
+8/09/96 (owaddell)  Markups can now be made transparent again wrt. attributes
+        that have been set.  For example, you can now set the font to #f to
+        cancel the effect of this markup so that the font of the underlying
+        text (or markups) will show through.  Same for color, etc.  Event
+        methods are still notified for each markup over the affected range.
+        Updated and corrected the documentation for markup.ss.
+
+8/09/96 (owaddell)  Renamed widget-guardian to swl:widget-guardian, renamed
+        insert-widget and insert-stick-widget similarly, and revised the
+        insert-widget code so we can allow <toplevel>s to be collected when
+        hidden and unreachable. (base2.ss frame.ss init.ss menu.ss)
+
+8/09/96 (owaddell)  Updated <text> and <listbox> set-grid! internals to
+        use new Tk name for this functionality.
+
+8/09/96 (owaddell)  Took out some window-manger functions that don't seem
+        to make sense.  For example, the <toplevel> set-grid! functionality
+        seems like something that would be better in a geometry manager.
+        Not sure whether this will work for window mangers, though.
+
+8/08/96 (owaddell)  Added some missing window-manager functions to <toplevel>
+
+           (set-aspect-ratio-bounds! toplevel min max)
+           (get-aspect-ratio-bounds toplevel)
+
+           (set-min-size! toplevel width height)
+           (get-min-size toplevel)
+
+           (set-max-size! toplevel width height)
+           (get-max-size toplevel)
+
+           (set-resizable! toplevel width height)
+           (get-resizable toplevel)
+
+        ; later commented out some others, see above.
+
+8/08/96 (owaddell)  Removed (presumably superfluous) error-checks from the
+        swl:event-dispatch code in teventloop.ss.  Tested without incident.
+        (trimmed the code down quite a bit)
+
+8/08/96 (owaddell)  Added facility for creating modal interfaces, and updated
+        the select-file and warning-dialog procedures to use it.  Added indirect
+        in teventloop.ss and init.ss.
+
+           (swl:application-modal app thunk)
+              suspends GUI interaction for app while thunk is evaluated
+              returns result of evaluting thunk
+              none of app's threads are suspended, events sent to bit bucket
+
+           (send widget get-application-context)
+              returns the application context (which can be passed to
+              swl:application-modal) to which events for widget are
+              dispatched
+
+8/07/96 (owaddell)  Fixed bugs in <entry>'s private scan-by-word method that
+        affected word-start and word-end.
+
+8/06/96 (owaddell)  Added new method get-selected-range to <entry> and <text>.
+        It currently returns a pair, but may return multiple values or accept
+        a continuation in the future.  The internals of <entry> and <text>
+        have changed to abstract other code with similar needs.
+
+        The <listbox> method selected-items has been renamed get-selected-items.
+
+8/06/96 (owaddell)  Quick hack to threads.ss to support Chez Scheme 5.0b
+        the debugger interface is totally hose-o-matic, but it does run the
+        tutorials.
+
+--- 0.9h ---------------------------------------------------------------------
+
+8/01/96 (owaddell)  Extensive modifications to event-case.  Key events used to
+        be represented as characters if possible or symbols.  Key events are
+        now represented as characters where possible or integers.  Event-case
+        can be used exactly as before to match symbolic patterns, but the "key"
+        parameter can no longer be bound to a symbolic quantity.  Thus, if you
+        want to pass a key-press method a particular non-ascii key such as
+        up-arrow, you now have to do:
+           (key-press inst (keysym->keycode 'up) modifiers)
+        instead of
+           (key-press inst 'up modifiers)
+
+--- 0.9g ---------------------------------------------------------------------
+
+8/01/96 (owaddell)  Ported existing apps to the new changes.
+
+7/30/96 (owaddell)  Bumped the default swl thread quantum up to 20000, and added
+        a parameter swl:default-quantum.
+
+7/30/96 (owaddell)  Eliminated the following public methods from menu.ss code:
+          enable-item disable-item y->index index->item label->index.  Also
+        made some internal changes to that code.
+
+7/26/96 (owaddell)  Modified menu.ss code so that menu items are no longer
+        permitted to be present in more than one menu.  Added new methods for
+        getting and setting list of menu items on a menu.  (Probably useful
+        mostly for pop-up menus which probably aren't useful yet anyway.)
+            set-menu-items! and get-menu-items
+
+7/24/96 (owaddell)  Fixed some look and feel problems with scales and scrollbars
+        and fixed the way actions are invoked.
+
+7/24/96 (owaddell)  Oops.  Missed <command-menu-item> <radio-menu-item>
+        and <check-menu-item> on my first pass through adding the self argument
+        to all the action procedures.  Also caught bug where action of a cascade
+        item wasn't being run.  (Not sure if they should really even have action)
+
+7/22/96 (owaddell)  Fixed that nasty bug that complained about #<void> in
+        select-range when certain strange combinations of mouse stuff happen
+        in text widget.
+
+7/22/96 (owaddell)  Renamed <scale> methods (& keyword arguements & generics)
+     set-from!    -->   set-min!
+     set-to!      -->   set-max!
+     get-from     -->   get-min
+     get-to       -->   get-max
+
+7/22/96 (owaddell)  Action procedures now take an extra argument representing
+        the instance whose action it is.  This affects the set-action! values of
+            <button> <checkbutton> <radiobutton> <menubutton>
+            <scale> <scrollbar>
+            <entry>
+            <command-menu-item> <radio-menu-item> <check-menu-item>
+        In the process I fixed a bug where <scale>s were ignoring their action
+        procedures.
+
+6/11/96 (owaddell)  Moved to multiple application fallback queues.  Events
+        for a particular widget are now dispatched to the fallback queue
+        associated with the application in which that widget was created.
+        Fallback queues are thread-parameters whose values are recorded when
+        a widget is created.  The primitive swl:make-application acts just
+        like thread-fork-process, except that it also spawns a new fallback
+        queue for the new application.  The intent is that errors in one
+        application hang only that application yet we retain the order
+        of evaluation dictated by the order in which the events are received.
+
+6/06/96 (owaddell)  Fixed some menu bugs:
+  x moving mouse out of posted menu to another menubutton could cause
+    another menu to be posted and unposted when the first menu was unposted.
+    (showed up as flicker sometimes)
+  x menu items were being highlighted as the mouse moved over them even when
+    the left button wasn't down
+  x Clicking on a cascade item whose cascade was already posted used to
+    repost the cascade (flicker).
+
+6/05/96 (owaddell) Commented out the code (teventloop.ss) that makes current-
+        and console-output ports "non-blocking".  It caused bugs with code
+        that did things as simple as:
+          (begin
+            (thread-fork
+              (lambda () (printf "Hello World~n") (flush-output-port)))
+            (void))
+        produces  "llo World"
+
+5/17/96 (owaddell) Positions in text widget are now represented by pairs
+        (x . y) where x and y are zero based.  They had been pairs (y . x)
+
+5/17/96 (owaddell) Better error messages from pos<? et. al.
+
+5/14/96 (owaddell) Renamed methods for more consistency.
+        get-cols     -->  get-width/char
+        set-cols!    -->  set-width/char!
+        get-char-x   -->  get-x/char
+        get-char-y   -->  get-y/char
+        index-line   -->  get-y/char
+        index-char   -->  get-x/char
+
+5/13/96 (owaddell) Added support for marked-ranges to <markup> and markups-at
+        to <text>.  In the process the underlying handles used for tag names
+        that implement markups were changed from gensyms to obscure symbols.
+        We only touch a field of the symbol not available in user code, so
+        should be ok.  Really should smack a different hash-table on this
+        to be even safer.
+
+5/12/96 (owaddell) Changed interaction of <canvas> and <canvasitem>s.
+        Instead of public parent-eval method, the children now use the
+        parent's handle explicitly.  Should cut down on code size a
+        bit.  Still need to prevent children from using parent handle
+        after it's been destroyed, so fix the destroy method of parent
+        so he only destroys after all kids die.  This might be useful
+        in text.ss stuff as well.
+ 
+5/11/96 (owaddell) Revised hscroll/vscroll methods:
+          hscroll 'moveto fraction   -->  hscroll n 'fraction
+          hscroll 'scroll n 'units   -->  hscroll n 'units
+          hscroll 'scroll n 'pages   -->  hscroll n 'pages
+        This avoids an apply in the set-action! of a scrollbar.
+        was:  (set-action! sb (lambda args (apply hscroll txt args)))
+        now:  (set-action! sb (lambda (n q) (hscroll txt n q)))
+        Updated all internal SWL code to comply with this change.
+        Inherited the scrolling code where possible (canvas.ss would be
+        more trouble than it's worth).  Gave <entry> NOP methods for
+        vscroll and get-vertical-view.
+
+5/10/96 (owaddell) Fixed bug in <listbox> with shift-up shift-down selection.
+
+5/9/96 (owaddell) Implemented <listbox> mouse/keyboard interaction.
+
+5/7/96 (owaddell) Began massive reorganization of user-interface code related
+       to selection in entries texts and listboxes
+
+5/7/96 (owaddell) Revised names of methods for manipulating <mark>s and
+       eliminated <text-index> class.  Positions in a text widget are now
+       represented by pairs of zero-based natural numbers (yes, I finally
+       eliminated Tk's 1-based lines), and by instances of <mark>.
+
+          get-pos     returns line and char offsets as a pair
+          get-char-x  returns the character offset from start of line
+          get-char-y  returns the line offset from start of text
+
+          mark-pos  -->  get-pos
+          mark-row  -->  get-char-y
+          mark-col  -->  get-char-x
+          mark-type deleted
+
+          index-line --> get-char-y  (I provided a generic that should work)
+          index-char --> get-char-x  (I provided a generic that should work)
+          index:         removed
+
+          add-offset method still supported for <mark>s but also added to
+          <text> for use with pair-style text indices or marks.
+             (add-offset obj disp)  -->  (add-offset txt obj disp)
+        
+5/6/96 (owaddell) Added disown to set of messages that are ignored once a widget
+       is destroyed (had just been the destroy message).
+
+5/1/96 (owaddell) Fixed typo in names of get-draw-spline set-draw-spline!
+
+--- 0.9d ---------------------------------------------------------------------
+
+4/29/96 (owaddell) Added preliminary support for inserting sub widgets in a text
+        widget.  (insert-widget-at txt index widget)  text.ss
+
+4/29/96 (owaddell) Added missing thread-critical-section in the adopt and disown
+        methods of container-widgets and text widgets.  base2.ss text.ss
+
+4/29/96 (owaddell) Added support for setting tab stops in text widgets and
+        markups.  text.ss option.ss markup.ss
+
+4/29/96 (owaddell) Added bounding-box method to text widget.  text.ss
+
+4/29/96 (owaddell) Added set/get for right-margin to markup.ss
+
+4/29/96 (owaddell) Fixed bugs in markup.ss:  typo in names of
+        set-paragraph-indent! and get-paragraph-indent, plus bugs
+        in their implementation (setting wrong Tk margin), and cut-and-paste
+        bugs in their documentation.
+
+4/28/96 (owaddell) Added some preliminary support for foreign procedures that
+        could be used to write a Scheme geometry manager.
+
+4/28/96 (owaddell) Fixed stupid bug in text.ss where destroying a <mark>
+        could set the destroyed flag shared by all marks in a text.
+
+4/26/96 (owaddell) Fixed bug in the event tracing facility.  (facility not
+        expected to survive into distribution, just useful for my own debugging)
+
+4/26/96 (owaddell) CVS checkins for swl should now fix group permissions
+        automatically.
+
+4/26/96 (owaddell) deleting application name, and Tk's "send" command in hopes
+        of avoiding Tk's "send" security-hole feature.  Maybe we need to hack
+        something on the C side to disable "send" processing.
+
+4/23/96 (owaddell) Renamed all the index<? etc. functions to pos<? etc. since
+        they accept instances of <mark> or <text-index>.
+
+4/23/96 (owaddell) The <text> insert method makes the cursor visible as a
+        side-effect.  The insert-at method can be used to insert without
+        making the insert point visible.
+
+4/19/96 (owaddell) added some support for the grid geometry manager.  currently
+        very puzzled by some of grid's behavior when parent windows are resized.
+
+4/19/96 (owaddell) the misc ivar that had been inheritable all over the place
+        is no longer so.  (it's just used for the crufty prop-set! prop-ref
+        code -- a way of having temp ivars)
+
+4/19/96 (owaddell) fixed typos in place method, and bugs in the way geometry
+        managers were registered w/ show and hide.  Major problem to work
+        around is the attempt to use two different geometry managers on the
+        same master.  I can generate nasty loops if I let Tk try to grid and
+        pack within the same frame.
+
+--- 0.9c ---------------------------------------------------------------------
+
+4/18/96 (owaddell) fixed stupid bug in documentation generator's makefile that
+        caused some of the macros to appear twice.
+
+4/18/96 (owaddell) made the define-class tutorial comply with new object system
+
+4/18/96 (owaddell) fixed scrolling of <text> widget when selecting w/ mouse
+        and the mouse moves outside the window.
+
+4/17/96 (owaddell) <entry> and <text> can now paste from X pasteboard
+        - paste feel is limited by bug in Tk or my understanding thereof
+            - widget's selection doesn't persist beyond clearing
+                - maybe need to investigate "selection handle proc ..."
+            - middle button release pastes at the current mouse position
+        - slection isn't presently cleared when cursor/movement keys are used
+          in <text>, but it is cleared in <entry>  ... need to decide which
+          makes most sense
+
+4/17/96 (owaddell) modified OOP implementation so that heap size shouldn't
+        continue to grow when classes are reloaded.
+
+4/17/96 (owaddell) removed the following public methods of <text>
+          - make-index-for
+          - mark-set
+          - mark-delete (or whatever it was called)
+        tempted at this point to get rid of the <text-index> class.
+
+4/17/96 (owaddell) added a <mark> class that lets us create anonymous marks
+        in text widets:
+           (send text fixed-mark pos)
+              creates a <mark> at pos that doesn't move when text
+              is inserted at pos
+           (send text floating-mark pos)
+              creates a <mark> at pos that moves when text is inserted at pos
+         Both kinds of marks move when text is inserted or deleted before them.
+           (send mark mark-pos)
+              returns as multiple values the current line and character position
+              of the mark.
+         Instances of <mark> should be usable pretty much anywhere a <text-index>
+         is permitted (in the text widget methods).  Eg. get-string, etc.
+
+4/16/96 (owaddell) renamed text-index class to <text-index> for fun
+
+4/16/96 (owaddell) made the "ls" procedure in guide.ss use case-lambda to
+        do something sensible when no arguments are given.
+
+4/16/96 (owaddell) fixed bug that could arise when inserting text with a
+        markup into a text widget that is not yet aware of the markup.
+
+4/16/96 (owaddell) updated ./apps sources to comply with new object system
+        restrictions.  everything still seems to work.
+
+4/16/96 (owaddell) updated SWL source to comply with new restrictions on
+        object system.
+
+4/14/96 (owaddell) fixed bug in object system where private/protected methods
+        could be passed an instance other than that passed into the public
+        method calling the private/protected.  private and protected methods
+        cannot be called using the send syntax, and calls to such methods
+        no longer specify an instance since self is implicit.  for the time
+        being, send-base may still be used with protected methods, although
+        the instance is implicit.  methods can now be referenced only in call
+        position.
+
+4/13/96 (owaddell) get-options macro bugfix from ehilsdal, get-options now
+        returns multiple values.  (potential incompatibility)  syntax.ss
+
+4/12/96 (owaddell) fixed bug in changes that support send-base outside method
+        bodies.  class.ss
+
+4/12/96 (owaddell) fixed <markup> bug where using a markup in several text
+        widgets could fail if event methods were established before all
+        texts acquired the markup.  markup.ss
+
+4/11/96 (owaddell) Incorporated font bugfixes from ehilsdal.  option.ss
+
+4/11/96 (owaddell) fixed bug where using window manager close to destroy
+        the lecture slide-show app would hang.  The problem is that when
+        destroyed, it needs to kill the thread that's writing into the
+        (destroyed) text widget.  Note this is also a problem for the repl.
+        slide.ss
+
+4/11/96 (owaddell) minor fix to graph editor app.  was trying to get its parent
+        after destroying itself (in order to destroy parent).  graph.ss
+
+4/11/96 (owaddell) send-base syntax is now supported outside methods.
+        That is, we can now have (lambda (x) (send-base x foo)).  class.ss
+
+4/11/96 (owaddell) fixed bug in <markup> where callback-procs for certain
+        mouse events could be dropped and collected away.  markup.ss
+
+4/11/96 (owaddell) fixed bug in <text>.  where removing a markup could
+        make it vulnerable to GC (unprotected) even if it was still present
+        on other parts of the text.  text.ss
+
+4/11/96 (owaddell) fixed bug in button behavior:  now invokes button action
+        only when the mouse is released *over* the button.  proto.ss
+
+ x moving to new ChangeLog format soon
+ x lots of stuff I don't remember
+ x now get better error messages when sending messages to non-instance
+ x modified event-case syntax (again) this time so that the pretty-printer
+   can cope with it more easily (helps with the automatically generated docs)
+ x pretty-printer is now hacked in SWL sources, so the documentation compiler
+   is no longer breaking that abstraction barrier
+ x added get-vertical-view and get-horizontal-view methods for JohnZ
+ - started making some of the scroll things NOPs for <entry>
+   (eg. get-vertical-view)
+
+Mar 29, 1996 ------------------------------------------------------------------
+ x canvas items that support set-fill-color! now accept 'transparent as a color
+   [fixes bug reported by Wally]
+ x modified make-font to accept optional template font as first argument
+   this simplifies the process of modifying a given font
+ x added event support for canvas-items:  mouse-enter, mouse-leave, mouse-press,
+   mouse-motion, key-press, key-release
+ x support for inlined images:  GIF, PPM, X11-bitmap
+ x updated tutorials with simple example of event-case
+ x updated tutorials with simple example of <image>
+
+Mar 26, 1996 ------------------------------------------------------------------
+ x <text> widgets now hold onto <markup>s that have been applied to them  (GC)
+ x <markup>s hold onto the callback procs they generate when they have
+   event handlers (GC)
+
+Mar 24, 1996 ------------------------------------------------------------------
+ x added event support for markups:  mouse-enter, mouse-leave, mouse-press,
+   mouse-motion, key-press, key-release
+ x callback-procs no longer invoke explicit Tcl "break".  This is needed to
+   permit callbacks for all the markups on a range of text to fire.  Actually,
+   it might have made more sense for the callbacks to fire in the stacking
+   order, starting at the top and letting each one pass control to the next
+   if desired.
+ x did design work on fileviewer that should make markup stuff reasonably
+   efficient (cuts the number of markups down from one for each reference
+   to one for each binding, for example)
+
+Mar 23, 1996 ------------------------------------------------------------------
+ x added set-action! get-action for <entry>  [different from Tk behavior]
+ - started working on <flex-text> class
+   that allows set/get of key-press (etc.) methods
+ - ported fileviewer so I could test revised source-object correlation
+
+Mar 21, 1996 ------------------------------------------------------------------
+ x fixed Makefiles so scripts don't contain stupidity like /foo/bar/../../baz
+   [caused problems for people who didn't have permissions all the way]
+ x added delete-all method to <entry> and <text> as suggested by Wally
+ x standardized argument order and method name for insert / insert-at
+   in <entry> and <text> as suggested by Wally
+      insert widget char/string
+      insert-at widget position char/string
+
+Mar 5, 1996 -------------------------------------------------------------------
+ - <toplevel> widgets can now be subclassed to ignore the destroy message and
+   save themselves in that way.  I realized how to prevent Tk from automatically
+   blitzing the toplevel when the window manager generates a close event.
+     - should test to see what happens / should happen with window mgr destroy
+     - find out how WM_SAVE_YOURSELF, etc. differ from WM_DELETE_WINDOW
+     - assuming we can always catch window manager kill messages, the change
+       to the destroy method (described in next item) means that code that
+       forks threads to manipulate widget state needs to kill those threads
+       when destroyed.  (the repl code needs to observe this)
+ x modified event-case grammar to avoid infix "or"
+ x <tk-object> now supports destroy method that atomically overwrites the public
+   dispatch table with a dispatch table that generates an error for all methods
+   This saves code size and eliminates tests that had been used before to flag
+   these errors.  Since it's atomic, it also eliminates the race condition in
+   the earlier explicit-check-for-deadness model.
+ x renamed base to <base> in src/oop/class.ss (and test.ss)
+
+Feb 26, 1996 ------------------------------------------------------------------
+ x renamed text-offset to index-offset
+ - make-index-for private method on <text> now public
+     - this was a natural consequence of providing the methods for manipulating
+       named marks in <text>.  HOWEVER:  I'm very tempted to nuke that in favor
+       of anonymous marks which would be more Scheme-y.
+
+Feb 10, 1996 ------------------------------------------------------------------
+ x insert, move-char, move-line, etc. methods for <entry> and <text> now scroll
+   the insertion cursor into view by default
+ x fixed bug in make-font when point size is not specified.
+ x activate and deactivate methods of buttons were broken
+ x eliminated proto-frame class
+ x get-width / get-height should now work for all <tk-widget>s
+ x renamed set-height! set-width! get-height get-width for textual widgets
+   [incompatibility]
+ x introduced methods that notify widgets of events
+ x supplied event-case macro for destructuring events
+ - moved widget behavior code to Scheme
+     x implemented the keyboard traversal mechanism in Scheme
+     x added make-visible method on <entry>. made it more efficient than Tk's
+ x pieslice is now accepted as an arc style
+ x now using more efficient (but Chez Scheme specific) widget lookup mechanism
+
+Feb 4, 1996 -------------------------------------------------------------------
+
+ - started to fix get-height/width bug where they didn't reflect their actual
+   size.   need to look at set-height/width next
+ x fixed bug with destroying menus
+ x fixed bug with pack and place methods not setting manager property
+ 
+ - provided a method that returns a list of the items in a canvas
+ x fixed bug in <canvas> find-overlapping and find-enclosed
+ x sync-display now returns void
+ x fixed bug in <rgb> class that relied on order of evaluation of the ivars
+ x fixed bug in <canvas> disown method which failed to drop canvas-items
+   that were destroyed.
+
+Jan 19, 1996 ------------------------------------------------------------------
+
+Bug fixes:
+  + tk->color now works for X rgb.txt color names like "blue"
+  + tk->mouse-cursor now returns the correct Tk default cursor
+    instead of '()
+  + There was a subtle bug in the macro system's implementation
+    of fluid-let-syntax (which is used by the define-class macro).
+  + index=? method of text widget fixed
+  + When `bind' was used with a procedure created by callback-lambda,
+    default Tk events were not overridden.  For example, it is now
+    possible to create an instance of <text> and use the following bind
+    to prevent edits, while allowing cursor movement:
+     (bind text (event: "<Key>")
+       (callback-lambda (keysym-text)
+         (case keysym-text
+           ((left h) (move-char text -1))
+           ((right l) (move-char text 1))
+           ((up k) (move-line text -1))
+           ((down j) (move-line text 1)))
+         (make-visible text 'insert)))
+
+Changes:
+  + The widget creation process has been sanitized.  This should make it
+    easier to derive new widget classes.
+      - `create' macro no longer relies on magic to separate the positional
+        from the keyword arguments.  This is now done by an explicit "with"
+        keyword:  (create <foo> x y z with (height: 20) (width: 45))
+      - The create macro now passes the same values to the `init' method
+        that it passes as the class formals.  Thus the formals (a b c)
+        below should now match if instance of <foo> will be made via `create':
+           (define-class (<foo> a b c) (base-class x y)
+             (ivars ...)
+             (inherited ...)
+             (inheritable ...)
+             (private ...)
+             (protected ...)
+             (public
+               [init (a b c) ...]
+               ...))
+  + Class formals can now include rest arguments.  For example,
+    (define-class (<foo> . bar) ...)  or  (define-class (<foo> x y . z) ...)
+  + The reference manual is now available in HTML format.  Some typesetting
+    bugs in the printed form have been corrected.  A better HTML version is
+    in the works.
+  + File names now fit the 14 char limit
+  + The directory structure for the project has been significantly
+    improved.  There is now an `apps' directory where the tools we
+    are developing for the education project will live.  The `common'
+    directory under apps will eventually grow into a library of generally
+    useful stuff.  For example, there is a skeleton <scrollframe> class
+    that provides scrollbars for scrollable things.
+  + Source now managed under CVS which should help the software engineering
+    process.

@@ -1,0 +1,52 @@
+overall:
+  - try setting proper-nesting? to #t in scheme-prep calls to insert-quotes
+    along with modified version of makeindex
+  - change documentation or implementation of \var; presently,
+    only first character after _ is sup'd
+  - update ReadMe
+    - document operation of independent modules:
+      - tspl-prep foo.stex => foo.tex,
+          scheme-prep foo.stex => foo.tex
+          or index-prep foo.itex => foo.tex
+        latex foo.tex => foo.dvi
+        html-prep foo.tex => foo.html
+
+tspl:
+  - flush/reduce giant book picture
+  - consider including note in index & summary re: page numbers
+  - consider adding back pointers to cite-points from bib entries
+
+hprep:
+  - check conformance of generated html code
+  - update documentation
+  - use read-arg in place of read-bracketed-text where appropriate
+  - add other latex support
+  - add \let, \global
+  - create local def-env's w/o side effects; eliminate other side effects
+  - fix \def pattern matching to follow tex rules
+  - fancy up index with headers, quick access links
+  - try to handle more subscripts/superscripts in htmlmath
+  - replace --- with em-dash, -- with en-dash if available
+  - consider adding some color; also hrule (or fancy hrule) before formdefs
+  - consider readjusting math size
+  - allow comments in math mode
+  - have see(foo) in index generate link to index entry for foo
+  - convert < and > to tex equivalents outside tt mode?
+  - add explicit \begin{latex} ... \end{latex} (punttolatex) environment?
+  - add \latexheader, \latextrailer, or \latexinclude commands?
+  - expand macros before going off to punt-to-latex?
+  - squash out redundant whitespace & pars
+    - maintain a "mode" flag: vertical or horizontal.  insert par only when
+      encountering two newlines in horizontal mode
+
+cssm:
+  - see tspl todo
+  - merged tspl/cssm formsummary & index
+
+code.ss:
+  - write special-purpose code extractor if code.ss is desired
+
+prim database:
+  - extract prim database from sorted-forms.raw
+    - produce prim, label pairs from lines in the form:
+        \sfentry{\scheme{(prim stuff ...)}{type}{\pageref{label}}

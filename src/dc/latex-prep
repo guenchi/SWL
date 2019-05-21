@@ -1,0 +1,10 @@
+	{ gsub(/\\\\/, "\$\\backslash\$", $0); \
+          gsub(/@i{/, "{\\it ", $0); \
+	  gsub(/@s{/, "{\\tt \\frenchspacing ", $0); \
+	  gsub(/@b{/, "{\\bf ", $0); \
+	  gsub(/@ref{/, "\\ref{", $0); \
+	  gsub(/@href{/, "\\href{", $0); \
+	  gsub(/@label{/, "\\label{", $0); \
+	  gsub(/@t{/, "{\\tt ", $0); \
+	  gsub(/@ni/, "\\noindent ", $0); \
+	printf "%s\n", $0 }

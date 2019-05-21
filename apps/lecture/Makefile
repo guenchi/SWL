@@ -1,0 +1,18 @@
+include ../../config.make
+
+lecture: $(prefix) $(prefix)/lecture.so
+
+$(prefix)/lecture.so: $(prefix)/swl.heap build-script \
+                   ../common/semaphore.ss \
+                   ../common/scheme-text.ss ../common/scrollframe.ss \
+                   ../common/fontmenu.ss ../common/arrows.ss \
+                   ../common/select-file.ss ../common/auxio.ss \
+                   ../repl/repl-text.ss lecture.ss
+	../../swl - build-script
+	mv lecture.so $(prefix)
+
+$(prefix):
+	mkdir -p $(prefix)
+
+clean:
+	rm -f $(prefix)/lecture.so

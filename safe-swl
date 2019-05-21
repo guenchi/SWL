@@ -1,0 +1,7 @@
+#!/bin/csh -f
+setenv TCL_LIBRARY /usr/lib/tcl8.5
+setenv TK_LIBRARY /usr/lib/tk8.5
+setenv SWL_ROOT /home/dyb/swl/oscar/lib
+setenv SWL_LIBRARY /home/dyb/swl/oscar/lib/i3le
+set R = /u/dyb/release/csv7.9.5/i3le
+exec $R/bin/i3le/scheme -b $R/boot/i3le/petite.boot -b $R/boot/i3le/scheme.boot -b /home/dyb/swl/oscar/lib/i3le/swl.boot $* |& tee /tmp/vg.out 

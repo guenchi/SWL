@@ -1,0 +1,67 @@
+% Copyright (c) 1996 Oscar Waddell
+%
+% See the file "Notice" for information on usage and redistribution
+% of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+\thispagestyle{empty}
+\null
+
+\vfill
+
+\begingroup
+\Huge\bfseries
+\begin{center}
+SWL Reference Manual% \\[3pt]
+%Revision~0.1
+\end{center}
+\endgroup
+
+\vskip .25in
+
+\begingroup
+\LARGE\bfseries
+\begin{center}
+\today
+\end{center}
+\endgroup
+
+\vfill
+
+\begingroup
+\Large
+\begin{center}
+Oscar Waddell\\
+with\\
+John B. Zuckerman
+\end{center}
+\endgroup
+
+\vskip .5in
+
+\begingroup
+\Large
+\begin{center}
+Indiana University \\
+and \\
+Cadence Research Systems \\[6pt]
+Bloomington, Indiana
+\end{center}
+\endgroup
+
+\vfill
+
+\pagebreak
+
+\thispagestyle{empty}
+\null
+
+\vfill
+
+\noindent
+\copyright~1996 Oscar Waddell
+
+\smallskip\noindent
+All rights reserved.
+No part of this book may be reproduced, in any form or by any means,
+without permission in writing from the author.
+
+\pagebreak

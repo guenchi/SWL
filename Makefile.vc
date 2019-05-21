@@ -1,0 +1,99 @@
+# SWL_ROOT is the installation root for SWL
+# The SWL boot file (swl.boot), heap (swl.heap), script (swl), and
+# compiled applications (eg. repl.so) will be installed in the the
+# directory named $(SWL_ROOT)/<arch>  where <arch> is the architecture
+# reported by Scheme for (machine-type).
+SWL_ROOT=lib
+
+# Specify Scheme compiler, optimization level, and debugging flags.
+Scheme=scheme
+o=2
+i=f
+p=f
+
+CVSVER=v0_9v
+include Mf-SWLVER
+
+# Should not need to modify anything below here.
+
+all: config.make
+	cd src\swl
+	$(MAKE) /nologo -f Makefile.vc
+	cd ..\..\abxstart
+	$(MAKE) /nologo -f Makefile.vc
+	cd ..
+
+#install-doc: config.make
+#	(cd src/dc/stex; $(MAKE))
+#	(cd src/dc; $(MAKE) install)
+
+tclversion.ss:
+	tclsh tclversion.tcl
+
+config.make: tclversion.ss configure.ss Makefile.vc
+	@copy << config.scheme > nul
+(define swl:Scheme "$(Scheme)")
+(define prefix "$(SWL_ROOT)")
+(set! swl:version "$(SWLVER)")
+(optimize-level $(o))
+(compile-profile #$(p))
+(generate-inspector-information #$(i))
+<<
+	$(Scheme) configure.ss
+
+
+config: cleanconfig config.make
+
+# clean cleans out files used during build process, leaves heaps and libraries
+clean: cleanintermediate cleanconfig
+	del /f swl.bat
+	del /f Make.out
+
+# reallyclean removes heaps and libraries
+reallyclean: cleanstex cleanlib clean
+
+# distclean removes online documentation produced by document compiler
+distclean: cleanref cleanlib clean
+	del /f swl.bat
+
+cleanintermediate: config.make
+	cd src\oop
+	$(MAKE) /nologo -f Makefile.vc clean
+	cd ..\swl
+	$(MAKE) /nologo -f Makefile.vc clean
+#	cd ..\dc\stex
+#	$(MAKE) /nologo -f Makefile.vc clean
+#	cd ..
+#	$(MAKE) /nologo -f Makefile.vc clean
+	cd ..\..\apps\repl
+	$(MAKE) /nologo -f Makefile.vc clean
+	cd ..\edit
+	$(MAKE) /nologo -f Makefile.vc clean
+	cd ..\htmlview
+	$(MAKE) /nologo -f Makefile.vc clean
+	cd ..\..\abxstart
+	$(MAKE) /nologo -f Makefile.vc clean
+	cd ..
+
+cleanconfig:
+	del /f tclversion.ss config.make config.scheme
+
+cleanlib: config.make
+	$(MAKE) /nologo -f Mf-cleanlib.vc cleanlib
+
+cleanref:
+#	cd $(SWL_ROOT)\ref
+#	del /f *.html
+#	del /f math\*
+#	rmdir math
+#	cd ..\..
+
+# this goes away when we move to autoconf
+cleanstex:
+#	cd src\dc\stex
+#	$(MAKE) /nologo -f Makefile.vc reallyclean
+
+lecture: all
+	cd apps\lecture
+	$(MAKE) /nologo -f Makefile.vc
+	cd ..\..

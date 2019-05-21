@@ -1,0 +1,17 @@
+; messing around with code we could call from instrumented interpreter thing.
+
+(define saved-k)
+
+(define docall
+  (lambda (p . args)
+    (call/cc
+      (lambda (k)
+        (if (eq? k saved-k)
+            (printf "Tail call\n")
+            (begin (set! saved-k k) (printf "Non-tail call\n")))
+        (apply p args)))))
+
+(new-cafe
+  (lambda (x)
+    (call/cc (lambda (k) (set! saved-k k) (eval x)))))
+

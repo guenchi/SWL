@@ -1,0 +1,70 @@
+BUILDING SWL
+
+Under Unix:
+    NOTE: SWL may not build properly using the "make" utilities
+    supplied by some vendors.  It is known to build properly using GNU
+    make.  SGI's pmake is known not to work.
+
+    Chez Scheme Version 6.0 (or later) must be installed and your path
+    should include the executable shell script, scheme, that invokes
+    Chez Scheme.
+
+    Your must have a C compiler to build the swl shared library (swl.so
+    or swl.sl).  Any ANSI C compiler should work.  Edit configure.ss if
+    necessary to adjust the method for using your C compiler and linker
+    to build object files and shared libraries.
+
+    If you do not have a C compiler, it is possible to use the shared
+    library shipped with the binary release, although it will be
+    necessary to edit src/swl/Makefile to remove dependencies on the
+    object files used to create the library.
+
+    Tcl/Tk 8.3.2 (or later) must be installed on your machine, and it
+    must have been configured to build and install shared libraries
+    (libtcl8.0.so and libtk8.0.so) using the --enable-shared option to
+    configure (see {tcl8.3.2,tk8.3.2}/unix/README).  If you've
+    installed Tcl/Tk anywhere but the default locations, edit
+    configure.ss to reflect the locations of the Tcl/Tk run-time
+    library files (those with .tcl extension), and the Tcl/Tk include
+    directory.
+
+    Once all of this has been set up properly, build the system by
+    typing "make" in the top-level directory.
+
+    Test SWL by running the shell script, "./swl".
+
+    To install SWL, edit the destination directories in Mf-install if
+    necessary and run "make install".
+
+    If the linker has trouble finding the Tcl/Tk libraries, you may need
+    to change the SHLIBS variable setting for your machine type in
+    configure.ss.
+
+Under Windows:
+    Chez Scheme Version 6.0 (or later) must be installed and your path
+    should include the batch file, scheme.bat, that invokes Chez
+    Scheme.
+
+    Microsoft Visual C++ 4.0 (or later) must also be installed on your
+    machine to build the sll dynamic link library (swl.dll), with the
+    directory containing its binaries (including cl, and nmake) in your
+    path.
+
+    If you do not have a C compiler, it is possible to use the dll file
+    shipped with the binary release, although it will be necessary to
+    edit src/swl/Makefile.vc to remove dependencies on the object files
+    used to create the library.
+
+    Tcl/Tk 8.3.2 (or later) must be installed on your machine.  If
+    you've installed Tcl/Tk anywhere but the default locations, edit
+    configure.ss to reflect the locations of the Tcl/Tk run-time
+    library files (those with .tcl extension), the Tcl/Tk .lib files
+    (e.g., tcl80.lib and tk80.lib), the Tcl/Tk .dll files (e.g.,
+    tcl80.dll and tk80.dll) and the Tcl/Tk include directory.
+
+    Once all of this has been set up properly, build the system by typing
+    "nmake -f Makefile.vc" in the top-level directory.
+
+    Test SWL by running the batch file, "swl.bat".
+
+See README for more information.

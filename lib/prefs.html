@@ -1,0 +1,120 @@
+<html>
+<head>
+<title>Preferences</title>
+</head>
+<body>
+
+<h1>Preferences</h1>
+
+The editor, repl, and interaction window each have a <i>Preferences</i>
+menu that allows the user to configure certain options, such as
+the font used to display text.
+Preferences for the editor, repl, or interaction window
+may be saved across sessions by selecting the <i>Save preferences</i>
+option from the <i>Preferences</i> menu.
+Preferences must be saved explicitly for each type of window.
+For example, saving repl preferences saves only the repl preferences,
+but does not save any changes to editor preferences
+since the last time editor preferences were saved.
+<p>
+<h3>Local preferences and the <tt>.swlprefs</tt> file.</h3>
+At startup, SWL searches for a preferences file named <tt>.swlprefs</tt>
+in the current working directory.
+If no <tt>.swlprefs</tt> file is found in the current directory,
+SWL searches in a machine-dependent location.
+On a Windows machine, SWL uses the value of the registry key
+<tt>HKEY_LOCAL_MACHINE\Software\Chez Scheme\swl<i>version</i>\SwlPrefsDir</tt>,
+where <i>version</i> is the the SWL version number (bound to <tt>swl:version</tt> at startup).
+This registry key is normally set when SWL is installed.
+On Unix machines, including Mac OS X, SWL looks for the <tt>.swlprefs</tt>
+file in the directory specified by the <tt>SWL_PREFS_DIR</tt> environment
+variable, if set, or in the user's <tt>HOME</tt> directory.
+<p>
+To maintain separate SWL profiles, create a new working directory, create
+an empty <tt>.swlprefs</tt> file in that directory, and start SWL from
+that directory.
+Since SWL finds a <tt>.swlprefs</tt> file in the current directory,
+it will not examine your global <tt>.swlprefs</tt> file, e.g., in your
+home directory, and changes to preferences will be saved in the local
+<tt>.swlprefs</tt> file.
+<p>
+The <tt>.swlprefs</tt> file is formatted as a Scheme association list,
+that is, a list of pairs where the car of each pair is a key that be
+used to retrieve the associated value, which stored in the cdr of that pair.
+The repl saves its preferences under the key <tt>repl</tt>, the editor
+under <tt>editor</tt>, and the interaction window under <tt>interaction-window</tt>.
+In each case, the value is an association.
+Since these applications can be configured using a <i>Preferences</i> menu,
+it is better not to edit the <tt>.swlprefs</tt> file by hand.
+<h3>System preferences</h3>
+While the editor, repl, and interaction window maintain application-specific
+preferences of their own, a few other preferences exist that affect the behavior
+of SWL system-wide.
+System-wide options are also stored in the association list contained in
+the <tt>.swlprefs</tt> file.  The following table describes the keys and
+the expected values.
+<ul>
+<li><tt>external-applications</tt>
+<p>
+<td>An association list containing one or more of the following keys:
+ <ul>
+ <li><tt>open-url-command</tt><p>
+     A string containing a command line to be used to open a given URL.
+     When the user attempts to open a web page from within SWL, a
+     <tt>system</tt> command line is built by supplying this string and
+     the URL string as argument to <tt>format</tt>.  For example, to
+     open the URL in the text-mode <tt>lynx</tt> browser under Unix, 
+     include the following in the <tt>external-applications</tt>
+     association list: <pre>(open-url-command "xterm -e lynx ~a")</pre></li>
+<li><tt>web-browser</tt><p>
+    A symbol or string naming a command to use to open a given URL.
+    When the user attempts to open a web page from within SWL, a <tt>system</tt>
+    command line is built by placing the URL after the <tt>web-browser</tt> command.
+    For example, to open URLs using the Konqueror web browser under KDE, 
+    include the following in the <tt>external-applications</tt> association list:
+    <pre>(web-browser "kfmclient openURL")</pre>
+    If both <tt>web-browser</tt> and <tt>open-url-command</tt> are specified,
+    the <tt>open-url-command</tt> takes precedence.</li>
+ </ul>
+</li>
+<li><tt>swl-global</tt><p>
+An association list containing one or more of the following keys:
+<ul>
+ <li><tt>splash-screen</tt><p>
+     A boolean indicating whether or not to display the SWL splash screen on startup.
+     To disable the splash screen, include the following in the <tt>swl-global</tt>
+     association list: <pre>(splash-screen . #f)</pre></li>
+<!--
+<li><tt>start-dir</tt><p>
+     A string containing the path of the working directory that SWL should
+     <tt>cd</tt> to at startup. For example, to start in the "Documents"
+     subdirectory of your home directory, include the following in the
+     <tt>swl-global</tt> association list:<pre>(start-dir . "~/Documents")</pre></li>
+-->
+<li><tt>on-startup</tt><p>
+    An expression to run at startup.  The expression is evaluated in an environment
+    that binds <tt>args</tt> to a list of the command-line arguments supplied when
+    SWL was invoked.  For readability, this key-value pair is
+    a two-element list rather than a single pair.
+    The default setting is equivalent to the following:
+<pre>
+(on-startup
+  (if (and (not (null? args)) (string=? (car args) "--edit"))
+      (if (null? (cdr args))
+          (new-edit)
+          (for-each new-edit (cdr args)))
+      (begin
+        (for-each load args)
+        (new-repl 'default))))
+</pre>
+</li>
+</li>
+</ul>
+
+Take care when editing the <tt>.swlprefs</tt> file by hand
+Changes may be lost if you have SWL save preferences to a file
+that you have edited.
+A malformed <tt>.swlprefs</tt> file can cause errors when SWL is started.
+
+</body>
+</html>

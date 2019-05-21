@@ -1,0 +1,64 @@
+\chapter{Preface}
+
+SWL is an object-oriented, multithreaded graphics and windowing library
+for Scheme and a set of tools that are being developed using this
+library.  These tools include:
+
+\begin{itemize}
+\item a window-based interaction environment, or read-evaluate-print
+    loop, with editing capabilities, a powerful history mechanism, and
+    a template mechanism to help guide programming exercises for novice
+    programmers;
+
+\item a simple editor for editing Scheme source files;
+
+\item a source-file viewer capable of highlighting matching variable
+    bindings and references, procedure call sites, assignable variables,
+    and other interesting program characteristics;
+
+\item a graphical inspector for Scheme objects, including continuations
+    and procedures, with hooks into the source-file viewer;
+
+\item a graphical profiler that hooks into the source-file viewer to
+    allow programmers to visualize program ``hot spots,'' i.e., portions
+    of their programs that are executed most frequently;
+
+\item a stepping interpreter; 
+
+\item a lecture scripting tool that allows split-screen viewing of
+    lecture slides and interactive evaluation of Scheme programs; and
+
+\item a simple HTML document viewer.
+\end{itemize}
+
+\noindent
+The development of SWL has been supported by the National Science
+Foundation under an educational infrastructure grant and by Cadence
+Research Systems (CRS), which develops and distributes Chez Scheme.
+SWL's development has been managed by Kent Dybvig in consultation with
+Chris Haynes, George Springer, and Dan Friedman.  Oscar Waddell has
+taken the lead in designing and implementing the system.
+Other contributors to the system's development include Carl
+Bruggeman, Bob Burger, Erik Hilsdale, and John Zuckerman.
+
+SWL is built on top of Chez Scheme extended with support for threads
+and object-oriented programming.  The graphics and windowing
+capabilities are supported by the Tcl/Tk system, which is made
+available via Chez Scheme's foreign procedure interface.  SWL makes
+heavy use of the syntax-case macro system and reader (Scheme
+source code lexer and parser) that annotates programs with source file
+information.
+
+This document describes the base library of windowing and graphics
+primitives.
+Chapter~\ref{chapter:tutorials}
+presents a set of brief tutorials that demonstrate the flavor
+Because SWL is object-oriented, the bulk of this document is centered in
+Chapters~\ref{chapter:classes} and~\ref{chapter:methods}, which describes
+the various classes and associated methods supported by SWL.
+of SWL and the object system upon which it is based.
+Chapters~\ref{chapter:macros} and~\ref{chapter:procedures} describe a
+set of basic syntactic extensions and
+procedures provided by the system.
+Chapter~\ref{chapter:summary} contains a summary of forms, and
+Chapter~\ref{chapter:faq} contains frequently asked questions.

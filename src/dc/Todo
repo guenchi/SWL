@@ -1,0 +1,66 @@
+* fix linebreak before schemedisplay
+* fix undefined references
+* list of methods under class doesn't seem to show the ones we inherit?
+* group methods according to use
+    - notification methods:  key-press key-release configure ...  scroll notify stuff?
+    - attribute stuff
+       - subdivision here?
+    - cursor movement / etc.
+* merge class lists under method when duplicate documentation (see init method for example)
+- seem to be getting extra \noindents which screw up indentation
+- first line of schemedisplay'd examples in tutorial HTML code is badly spaced
+- documentation for init method is screwy
+
+- method documentation in some places is identical (or close) and should be
+  inherited (or merge with cases that have duplicate documentation).
+- first line of documentation for each method is indented just a few points.
+    \noindent problem?
+
+- SWL documentation
+   - labels in href aren't coming out right
+     (getting numbers instead of text used as key for \ref anything useful)
+   - just need to do classes and methods now...
+   - where we describe the <foo> class or the bar method, it might be cool
+     to have it insert a link (at least for HTML version) to the appropriate
+     tutorials
+   - index from methods back to classes and from classes to methods
+   - separate documentation of methods and classes, add as formdefs so
+     methods end up in form summary
+       - suppress duplicates
+       - what to do about set-coords multi-arity guys?
+       * structure of reference manual will be
+           - tutorials (not sure where these go)
+           - macros
+           - procedures
+           - methods
+              - trash the set-! methods of <font>
+              - seems like we're going to want generics...
+           - classes
+   - links from tutorials to documentation?
+     (or leave this up to the documentation viewer?)
+
+
+* changes to hprep and prep
+    - \section \chapter, etc. now process the text w/in their { ... }
+    * probably should just change defn of read-bracketed-text, but to do that
+      we need to have access to s0
+    - \def items can now shadow built-in forms recognized by prep / hprep
+      (ie. section, etc.)
+
+- currently several problems with class names in html output:
+    <menu> means something in HTML
+    <font> means something in HTML
+    etc.
+
+- problems with macros not being expanded and html conversion
+  not being done (ie. > => &gt).
+
+  in body_3.html for example, I can manually replace \mytt{ ... }
+  with <code>...</code> and then see that we get the following at
+  top of file:
+
+    <h3><a name="sec1">Section</a> 4.1. <code><font></code></h3>
+
+  should be
+
+    <h3><a name="sec1">Section</a> 4.1. <code>&lt;font&gt;</code></h3>

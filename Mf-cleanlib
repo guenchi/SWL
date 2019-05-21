@@ -1,0 +1,7 @@
+include config.make
+
+cleanlib: config.make
+	(d=`basename $(SWL_LIBRARY)`;\
+	 p=`dirname $(SWL_LIBRARY)`;\
+	 cd $$p;\
+	 if [ "$$?" = "0" ]; then if [ -d $$d ]; then rm -rf $$d; fi; fi)

@@ -1,0 +1,156 @@
+\newif\iflatex\latexfalse
+\newif\ifhtml\htmltrue
+
+\newif\ifdraft\draftfalse % define to prevent confusion in tspl.stex
+
+%%% \frontmatter, \mainmatter, \backmatter
+\newif\ifmainmatter \mainmattertrue
+\newcommand{\frontmatter}{\mainmatterfalse}
+\newcommand{\mainmatter}{\setcounter{chapter}{0}\mainmattertrue}
+\newcommand{\backmatter}{\mainmatterfalse}
+
+\def\noseparator{\def\separator{}}
+
+%%% \chapter
+\newcounter{chapter}
+\def\chpic#1#2{\raw{<img src="canned/#1">}\\\emph{#2}}
+\newcommand{\chapter}[1]{
+\endchapter
+\openhtmlfile{#1}
+\ifmainmatter
+\refstepcounter{chapter}
+\edef\templabel{\genlab}\label{\templabel}
+\input{hebert/new/ch\thechapter}
+\raw{<h1>}Chapter \thechapter. #1\raw{</h1>}
+\begin{divertoutput}[0]
+\raw{<li>}\textbf{\href{\templabel}{Chapter \thechapter. #1}}
+\raw{<ul>}
+\end{divertoutput}
+\renewcommand{\endchapter}{\begin{divertoutput}[0]
+\raw{</ul><p>}
+\end{divertoutput}
+\copyrightnotice
+\closehtmlfile\renewcommand{\endchapter}{}}
+\else
+\edef\templabel{\genlab}\label{\templabel}
+\raw{<h1>}#1\raw{</h1>}
+\begin{divertoutput}[0]
+\raw{<li>}\textbf{\hpageref{\templabel}{#1}}\raw{<p>}
+\end{divertoutput}
+\renewcommand{\endchapter}{\copyrightnotice
+ \closehtmlfile\renewcommand{\endchapter}{}}
+\fi
+\noseparator
+}
+\newcommand{\endchapter}{}
+\newcommand{\copyrightnotice}{}
+
+%%% \section
+\newcounter{section}[chapter]
+\renewcommand{\thesection}{\thechapter.\arabic{section}}
+\newcommand{\section}[1]{
+\refstepcounter{section}
+\edef\templabel{\genlab}
+\raw{<h3><br>}\label{\templabel}Section \thesection. #1\raw{</h3>}
+\begin{divertoutput}[0]
+\raw{<li>}\textbf{\href{\templabel}{Section \thesection. #1}}
+\end{divertoutput}
+\noseparator
+}
+
+%%% \subsection
+\newcounter{subsection}[section]
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\newcommand{\subsection}[1]{
+\raw{<h4><br>}Subsection \refstepcounter{subsection}\thesubsection. #1\raw{</h4>}
+\noseparator
+}
+
+%%% \exercise
+\newcounter{exercise}[section]
+\renewcommand{\theexercise}{\thesection.\arabic{exercise}}
+\newcommand{\exercise}{
+\raw{<h4>}Exercise \refstepcounter{exercise}\theexercise\raw{</h4>}
+\noseparator
+}
+
+%%% alphalist
+\newcounter{alphalist}
+\def\alphalist{\begingroup\setcounter{alphalist}{0}
+ \def\endalphalistitem{}%
+ \renewcommand{\item}{\endalphalistitem
+  \def\endalphalistiem{\raw{</td></tr>}}%
+  \stepcounter{alphalist}%
+  \raw{<tr valign=top><td>}\alph{alphalist}.\raw{</td><td>}}
+ \raw{<table>}}
+\def\endalphalist{\endalphalistitem\raw{</table>}\endgroup}
+
+%%% table of contents
+% do \endchapter as a favor to \chapter
+\newenvironment{contents}
+  {\raw{<h1>}Table of Contents\raw{</h1>}\raw{<ul>}}
+  {\endchapter\raw{</ul>}}
+
+%%% summary of forms
+\def\sfentry#1#2#3{\raw{<tr><td nowrap>}#1\raw{</td>}%
+ \raw{<td>}#2\raw{</td>}%
+ \raw{<td align=right>}#3\raw{</td></tr>}}%
+\newenvironment{thesummary}
+  {\raw{<table>}%
+        \raw{<tr><th align=left>Form</th><th align=left>Category</th>}%
+        \raw{<th align=right>Page</th></tr><tr><td colspan=3><hr></td></tr>}}
+  {\raw{</table>}}
+
+%%% index
+\newcommand{\see}[2]{\emph{see} #1}
+\newenvironment{theindex}
+  {\begingroup\newcommand{\itemindent}{\raw{<tt>&nbsp;&nbsp;&nbsp;</tt>}}
+   \renewcommand{\item}{\raw{<br>}}
+   \newcommand{\subitem}{\raw{<br>}\itemindent}
+   \newcommand{\subsubitem}{\raw{<br>}\itemindent\itemindent}}
+  {\par\endgroup}
+
+%%% scheme support
+\def\scheme#1{{\tt #1}}
+\def\schemedisplay{\par\begingroup\tt\hardspaces}
+\def\endschemedisplay{\endgroup\par}
+\def\schemeblankline{{\\\\}}
+\def\schatsign{\raw{@}}
+\def\schbackslash{\raw{\}}
+\def\schcarat{\raw{^}}
+\def\schdot{\raw{.}}
+\def\schtilde{\raw{~}}
+\def\schunderscore{\raw{_}}
+\def\is{$\Rightarrow$}
+\def\si{\raw{<img src="gifs/ghostRightarrow.gif">}}
+\def\var#1{\emph{#1}}
+
+\def\schemelinestart{}
+
+%%%% TSPL/CSSM specific
+\def\longcode{}
+\def\noskip{}
+\def\copyright{&copy;}
+\def\itemvdots{\vdots}
+
+%%% grammar support
+\newenvironment{grammar}
+ {\begingroup
+  \def\orbar{\raw{</td><td align=center>|</td><td nowrap>}}
+  \def\longis{\raw{</td><td align=center>}$\longrightarrow$\raw{</td><td nowrap>}}
+  \def\\{\raw{</td></tr><tr><td nowrap>}}
+  \raw{<table><tr><td nowrap>}}
+ {\raw{</td></tr></table>}\endgroup}
+
+\def\bar{\raw{|}}
+\def\kplus{\raw{<sup>+</sup>}}
+\def\kstar{\raw{*}}
+\def\ang#1{\raw{&lt;}#1\raw{&gt;}}
+
+\def\entryheader{\noskipentryheader}
+\def\noskipentryheader{\separator}
+\def\endentryheader{\endnoskipentryheader}
+\def\endnoskipentryheader{\par\def\separator{\raw{<hr>}}}
+\def\formdef#1#2{\\{\bf #1}: #2}
+\def\formsummary#1#2#3#4{}
+\def\returns{\\\textbf{returns: }}

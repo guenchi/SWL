@@ -1,0 +1,53 @@
+\def\tutorial#1{{Using \big#1}}
+\def\mybf#1{{\bf #1}}
+\def\mytt#1{{\tt #1}}
+
+% NOTE:  the blank line in this definition is essential given the current
+%        definition of \endentryheader.
+% I might be able to use a \par if I knew more about this...
+\def\ret#1{\returns #1 \endentryheader
+
+}
+% NOTE:  the blank line above is essential given current def of \endentryheader
+
+\iflatex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LATEX
+\def\picturechapterhead{\plainchapterhead}
+\def\big\scheme#1{{\tt #1}}
+\def\hpageref#1#2{#2}
+\def\href#1#2{#2}
+\def\methodlink#1{#1}
+\def\classes#1{
+ \par\begin{list}{}\item\raggedright {\bf classes:} #1 \end{list}
+}
+\def\methods#1{
+ \par
+ \smallskip\noindent{\bf Methods:}
+ \begin{list}{}\item\raggedright #1 \end{list}
+}
+\def\inhmethods#1{
+ \par
+ \smallskip\noindent{\bf Inherited methods:}
+ \begin{list}{}\item\raggedright #1 \end{list}
+}
+\def\separator{}
+\else
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% HTML
+\def\big\scheme#1{\scheme{#1}}
+\def\noindent{}
+\def\raggedright{}
+\def\smallskip{\raw{<p>}}
+\def\methodlink#1{#1}
+\def\classes#1{
+ \raw{<menu>}{\bf classes:} #1\raw{</menu>}
+}
+\def\methods#1{
+ \smallskip\noindent{\bf Methods:}
+ \raw{<menu>}#1\raw{</menu>}
+}
+\def\inhmethods#1{
+ \smallskip\noindent{\bf Inherited methods:}
+ \raw{<menu>}#1\raw{</menu>}
+}
+\def\separator{\raw{<hr>}}
+\fi

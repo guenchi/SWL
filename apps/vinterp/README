@@ -1,0 +1,10 @@
+To use:
+
+This requires a version of Chez Scheme >= 5.0f.
+
+- create a symlink to cmacros.ss from the source distribution of the version
+  of Chez Scheme you're using to build SWL
+- create a symlink to the modified interpret.ss provided separately
+- % swl vinterp.ss
+  (this will dump some usage information to the console)
+

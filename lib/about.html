@@ -1,0 +1,125 @@
+<html>
+<head>
+<title>About SWL</title>
+</head>
+<body>
+
+<h1>About SWL</h1>
+
+Scheme Widget Library (SWL)<br>
+Copyright (c) 1998 Oscar Waddell
+
+<p>
+Written by (in alphabetical order): Carl Bruggeman, Robert G. Burger,
+R. Kent Dybvig, Erik Hilsdale, Oscar Waddell, John Zuckerman, with
+contributions from Walter Kovaleski of Abstrax, Inc.
+
+<p>
+SWL development has been supported by the National Science Foundation
+(under grant number CDA-9312614), Indiana University, and Cadence
+Research Systems.
+
+<p>
+SWL is based on Scriptics' Tcl/Tk system and runs in Chez Scheme and/or
+Petite Chez Scheme.
+
+<p>
+SWL is distributed under the same terms as the Tcl/Tk system upon which
+it is based, as described under <a href="#license">license</a> below.
+
+<p>
+SWL is very much a work in progress, and is still in prerelease form.
+A few of its major deficiencies are listed below:
+
+<ul>
+ <li>The current thread schedular levies a large penalty on run-time
+     performance (often in excess of <em>10%</em>).  This affects
+     timings as well as performance.
+
+ <li>The global namespace is poluted by many hundreds of names that don't
+     belong there, and redefining or assigning these names can cause
+     SWL to malfunction.
+
+ <li>The HTML viewer is very incomplete and cannot even handle our own
+     documentation properly.  You're better off using Netscape to view
+     the documentation.
+
+ <li>Many more aspects of SWL's appearance and behavior should be
+     controlled by preferences, and it should be possible to save
+     preferences from one use of SWL to the next.
+
+ <li>Many of the tools, including the stepper, graphical inspector,
+     and profile viewer are out of date and are not included in the
+     binary distribution.
+</ul>
+
+<p>
+SWL Source is available from
+http://www.cs.indiana.edu/proglang/swl.
+Feel free to grab it and (a) fix any bugs you find, (b) add any new features
+you like, (c) port it to the most recent version of Tcl/Tk if not already
+done, (d) port it to new the most recent version of Chez Scheme if not
+already done, or (e) port it to another Scheme system.
+Please let us know about any such changes
+at swl@cs.indiana.edu.
+
+<p>
+If you find a bug, please take a few minutes to isolate it and create
+a short file or sequence of expressions that exposes the bug.
+If you feel like fixing it yourself, please do!  Send us the code that
+exposes the bug along with the required fix, and we'll put it into
+the next release.
+If you don't feel like fixing it yourself, send us the (short) code that
+exposes the bug and we'll try to track it down.
+In either case, please send us a transcript and/or complete description
+of the errant behavior.
+If we can't reproduce a problem, we can't fix it.
+Send all information about SWL bugs to swl@cs.indiana.edu.
+
+<h2><a name="license"></a>SWL License</h2>
+
+The following terms apply to all files associated with the software
+unless explicitly disclaimed in individual files.
+
+<p>
+The authors hereby grant permission to use, copy, modify, distribute,
+and license this software and its documentation for any purpose,
+provided that existing copyright notices are retained in all copies and
+that this notice is included verbatim in any distributions. No written
+agreement, license, or royalty fee is required for any of the
+authorized uses.  Modifications to this software may be copyrighted by
+their authors and need not follow the licensing terms described here,
+provided that the new terms are clearly indicated on the first page of
+each file where they apply.
+
+<p>
+IN NO EVENT SHALL THE AUTHORS OR DISTRIBUTORS BE LIABLE TO ANY PARTY
+FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE, ITS DOCUMENTATION, OR ANY
+DERIVATIVES THEREOF, EVEN IF THE AUTHORS HAVE BEEN ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.  THE AUTHORS AND DISTRIBUTORS SPECIFICALLY
+DISCLAIM ANY WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+NON-INFRINGEMENT.  THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, AND
+THE AUTHORS AND DISTRIBUTORS HAVE NO OBLIGATION TO PROVIDE MAINTENANCE,
+SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+
+<p>
+GOVERNMENT USE: If you are acquiring this software on behalf of the
+U.S. government, the Government shall have only "Restricted Rights" in
+the software and related documentation as defined in the Federal
+Acquisition Regulations (FARs) in Clause 52.227.19 (c) (2).  If you are
+acquiring the software on behalf of the Department of Defense, the
+software shall be classified as "Commercial Computer Software" and the
+Government shall have only "Restricted Rights" as defined in Clause
+252.227-7013 (c) (1) of DFARs.  Notwithstanding the foregoing, the
+authors grant the U.S. Government and others acting in its behalf
+permission to use and distribute the software in accordance with the
+terms specified in this license.
+
+<p>
+Chez Scheme and Petite Chez Scheme, within which SWL runs, are covered
+by separate agreements that you should have received when Chez Scheme
+or Petite Chez Scheme was installed.
+</body>
+</html>

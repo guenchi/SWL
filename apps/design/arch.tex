@@ -1,0 +1,1016 @@
+\documentclass{article}
+
+\title{The Architecture of the Designer}
+\author{John B. Zuckerman}
+
+\usepackage{ifthen}
+
+\input{commands}
+\begin{document}
+
+\maketitle
+
+
+\section{Introduction}
+
+The designer is a single program written for the {\sc SWL}\cite{SWL}
+programming environment (Chez Scheme\cite{TSPL} combined with the
+graphics user interface capabilities of Tcl/Tk\cite{TCLTK}).  The
+designer permits a user to code and edit a hardware design expressed
+in a purely functional subset of Scheme, and to manipulate it using
+various meaning- (or correctness-) preserving transformations provided
+by the designer.  This report documents the architecture of the
+designer to provide the information needed for future development
+work.
+
+The designer's user interface operates in either of two modes: Unlocked
+and Locked.  In Unlocked Mode, the designer functions much like a
+standard text editor, with some extensions to support parenthesis
+balancing and structure collapsing (outlining).  In Locked Mode, the
+meaning-preserving transformations are enabled and unrestricted text
+editing is disabled.
+
+In Locked Mode the designer records the current state of the design
+prior to each user-selected meaning-preserving transformation.  The
+designer displays a representation of all prior design states in a
+separate window (``Design History'') in the form of a tree diagram.
+Each design version is displayed as a tree node annotated with the
+type and values employed in the transformation.  The user may visit
+previous design states simply by clicking on the appropriate node in
+the Design History window.
+
+The implementation of the designer itself heavily exploits the object
+oriented language extension to Scheme provided in {\sc SWL}, which is a
+relatively conventional class-based single-inheritance OOP system.  A
+{\sc SWL} class encapsulates a set of methods and instance variables (local
+state), and provides a mechanism for creating new instances of the
+class (each with its own set of instance variables).
+
+
+\section{Selected Features of the Designer}
+
+The designer is a specialized version of another tool: the {\sc SWL}
+general purpose Scheme language editing tool (the {\em editor}), which
+was developed earlier for this project.
+
+The editor provides a conventional GUI application layout, with a
+scrollable and resizeable multi-line window for editing text, a
+one-line ``mini-buffer'' for displaying messages, and a menu-bar with
+pull-down menu items and buttons.  The editor also displays the name
+of the file being edited, and a ``worried face'' icon if editing
+changes have been made since the contents of the text buffer were last
+saved to disk.
+
+\subsection{Locked and Unlocked Modes}
+
+The designer always operates in one of two mutually exclusive modes:
+{\em Unlocked} and {\em Locked}.  Unlocked Mode provides the editing
+capabilities of an ordinary text editor with none of the
+meaning-preserving tranformations or editing restrictions of Locked Mode.
+
+\subsubsection{Unlocked Mode}
+
+The editor provides support for Scheme expression parenthesis
+balancing and lexical structure outlining (a feature known as ``the
+box'').  In Unlocked Mode the designer adds support for structure
+collapsing and expanding, also known as {\em outlining}.
+
+The user input Right-Button (i.e., pressing and releasing the
+rightmost mouse button) is used both to collapse and expand a
+parenthesized form.  Shift-Right-Button (i.e., pressing and releasing
+the rightmost mouse button plus either shift key) is used to expand
+all collapsed forms (outer and nested) at the current cursor position.
+
+
+\subsubsection{Locked Mode}
+
+Once a complete design has been entered into the designer, the user
+may enter Locked Mode by pressing the ``Lock'' button on the menu-bar.
+When Locked Mode is selected, the designer parses the design code,
+and:
+
+\begin{itemize}
+\item if the design is not syntactically well formed, reports an error
+by (1) highlighting in red the first character position where the
+parser detected an error, and (2) by displaying the parser's error
+message in the editor's mini-buffer,
+
+\item if the design is syntactically well formed, highlights certain
+recognized subforms of the design in various colors (see table
+\ref{tab:highlight}).
+
+\end{itemize}
+
+Once the user's design has been accepted by the parser, the user may
+apply various meaning-preserving design transformations to the
+design-in-progress, and may revert that design to an earlier version
+by using the ``Design History'' tool.
+
+\subsection{Design Transformations}
+
+At present, two meaning-preserving design transformations are
+supported by the designer. A larger number of transformations are
+envisioned for the future.  The supported transformations are:
+
+\begin{description}
+\item[substitution] The bound expression of a lexical variable may be
+substituted for any of its variable references simply by clicking on a
+reference.  A popup menu is presented, which lists applicable
+operations.  Selecting the ``Substitute'' popup menu option performs
+the substitution.
+
+\item[binding relocation] A lexical binding may be relocated within
+its {\sf let} form, or to another {\sf let} form altogether (thereby
+changing its scope).  First, the user moves the mouse cursor over a
+binding to select it. A selected binding is highlighted in pink. Next,
+the user clicks the mouse left-button to cause the highlighted region
+to begin blinking.  Finally, the user clicks the mouse left-button
+within the scope of another binding of the current {\sf let} form, or
+within another {\sf let} form, to cause the selected binding to be
+relocated.
+
+At present, the designer does not implement knowledge of the full
+semantics of bindings for all {\sf let} form variants. Therefore, at
+present the designer permits certain incorrect relocations.
+Additional constraints on binding relocation for correctness may be
+added to the designer in the future.
+
+\end{description}
+
+
+
+\subsection{The Design History Tool}
+
+The designer displays the complete history of Locked Mode design
+versions as a {\em tree diagram\/} in a separate window (labeled
+``Design History'').  Each design version is represented as a node of
+the tree, and is annotated with information about the transformation
+used to derive the version.  The user may visit previous design states
+simply by clicking with the mouse on the appropriate node in the
+diagram.
+
+When the user selects Locked Mode, the edit-buffer contents are
+parsed.  If parsing is successful, a green-colored node is added to
+the tree diagram.  Otherwise, a red node is added.  The user may then
+select any of the available design transformations; a node is added to
+the tree diagram for each transformation selected.  A transformation
+node is colored black and is annotated to the right with the type and
+information about the subexpression used in the selected
+transformation.  A node that is drawn {\em below\/} another node
+denotes a successor version, or {\em child}, of the node above
+immediately it.
+
+A square box is drawn around one tree node to denote the design
+version that is currently selected and resident in the edit-buffer.
+The user may select other versions at any time by clicking on a tree
+node with the left mouse button.  The box is relocated to denote the
+newly selected version.
+
+If the user first selects an interior node of the tree, and then
+selects a design transformation, a new {\em branch\/} of the tree is
+created and added to the diagram.  Branches are always drawn so that
+there is there is space available to the right of the node for the
+display of annotation information.  Hence, sibling nodes do not always
+appear at the same vertical coordinate in a tree diagram. Tree
+branching is denoted by drawing an open circle as a successor node,
+with branches extending down and to the right.
+
+
+
+\begin{table}\centering
+\begin{tabular}[]{|l|l|}
+\hline
+yellow & lexical variable reference     \\
+brown & bound lexical variable   \\
+pink  & lexical binding     \\
+orange & matched parenthesis \\
+red  & parsing error     \\
+\hline
+\end{tabular}
+\caption{Highlighting Colors used in Locked Mode}\label{tab:highlight}
+\end{table}
+
+
+
+
+\section{A Brief Overview of the {\sc SWL} OOP System}
+
+The {\sc SWL} OOP system is implemented as a set of syntactic extensions to
+Chez Scheme; it is not integrated with the Scheme type system, e.g.,
+Scheme objects such as pairs and integers are not instances of an OOP
+system class and are therefore unaffected by the class system.
+Furthermore, {\sc SWL} classes and instances are themselves represented as
+native Scheme objects (vectors).  Thus, the {\sc SWL} OOP system extends
+Scheme in the same heterogeneous way that the C++ class mechanism
+extends the C language.
+
+A new {\sc SWL} class is defined by using the {\sf define-class} syntactic form
+provided by {\sc SWL}:
+
+\begin{scheme}
+(define-class (<class-name> ...)  \>\>\>\>\>	SWL Syntactic Form
+  (<parent-name> ...)	
+  (ivars ...)
+  (inherited ...)
+  (inheritable ...)
+  (private ...)
+  (protected ...)
+  (public ...))
+\end{scheme}
+
+\cname{class-name} is the name of the new class (a Scheme symbol) and
+\cname{parent-name} is the name of the parent class, if any.  These names
+may be followed by zero or more instance initialization arguments.
+
+{\sf ivars\/} is a list of instance variables.  Each instance of the
+class will possess a private set of these variables.  {\sf inherited\/} is 
+the set of of instance variables that are to be
+inherited from the parent class.  {\sf inheritable} is the subset of
+the ivars that may be inherited by a subclass, if any.  {\sf private},
+{\sf protected}, and {\sf public} sections contain instance methods
+(i.e., Scheme procedures that may access instance the local state
+variables).
+
+Private and protected methods are callable as ordinary Scheme
+procedures, but only from within the lexical scope of a class
+definition (private methods only within the scope of the current
+class, protected methods only within the scope of the current class or
+any of its subclasses).  Public methods are callable from outside the
+class using the message passing form {\sf send,} which takes an
+instance of the class as its first argument.
+
+The {\sc SWL} syntactic form {\sf create} is used to instantiate a
+class.  Additional arguments to {\sf create} are passed as instance
+initialization arguments to the class.  A convention for passing
+keyword arguments (the {\sf with} clause) is provided.
+
+See the {\sc SWL} documentation\cite{SWL} for more details.
+
+
+
+
+\section{An Overview of the Designer Architecture}
+
+
+The designer is implemented by specializing (i.e., subclassing) an
+existing tool, the editor.  The designer adds knowledge of a
+functional subset of the Scheme language, which is used as a hardware
+description language.  The designer uses the knowledge of the
+functional language to annotate syntactic elements of a user's design,
+and to provide the user with meaning-preserving
+design transformations.
+
+As {\sc SWL} is a multi-threaded program execution environment, it
+supports the simultaneous execution of multiple applications.  This
+may include multiple instances of the designer application, and we
+will refer to separately executing designers as ``designer
+instances.''
+
+\subsection{The Procedure {\sf new-design}}
+
+The procedure {\sf new-design} creates a new executing instance of the
+designer application.  {\sf new-design} may be called with zero or one
+argument.  If no argument is supplied, a new designer instance is
+started with an empty edit-buffer.  If supplied, the argument must be
+the path of a file containing a design; the design is then loaded into
+the edit-buffer.  {\sf new-design} creates all of the GUI components
+of the new instance; most of its complexity is associated with
+creating the menu-bar items.
+
+{\sf new-design} invokes the {\sc SWL} procedure {\sf
+swl:make-application}, which is used to create a separate
+event-processing thread, or ``fallback queue,'' for the new designer
+instance.  Creating a separate event-processing thread for a new
+designer instance is optional, however, it has the advantage of
+separating the scheduling of the instance's event processing from that
+of other designer instances or other unrelated {\sc SWL} applications.
+{\sf new-design} also creates a new transient {\sc SWL} thread which
+builds the set of character fonts available on the ``Preferences''
+menu-bar item.
+
+Two key menu-bar buttons are labeled Lock and Unlock.  Pressing Lock
+disables general purpose text editing and causes the designer to
+interpret the edit-buffer contents as a design description (or
+``design'' for short).  Pressing Unlock causes the designer to revert
+to a general-purpose text editor.
+
+\subsection{The Procedure {\sf parse-it}}
+
+To interpret a design the designer begins by parsing the edit-buffer
+contents into grammatical elements. When the user presses Lock, the
+procedure {\sf parse-it} reads the contents of the designer's
+edit-buffer and parses it according to the grammar described below in
+table \ref{tab:grammar}.  As a side-effect, the parser creates an
+annotated {\em parse tree}, which contains lexical information (row
+and column values), terminal and non-terminal data from the grammar,
+etc.  Also as a side-effect, the parser also annotates the user's
+program by highlighting certain syntactic elements in color, or by
+displaying information about a syntactic element in the editor's
+mini-buffer.
+
+{\sf parse-it} could be extended (or an additional design analysis
+pass provided) to perform additional syntactic verification. For
+example, {\sf parse-it} could verify that no two bindings of a {\sf let}
+form, or no two formals of a procedure declaration, share the same
+variable name.
+
+The most important data structures created during the annotation
+process performed by {\sf parse-it} are instances of the class
+\cname{design-markup}.  Full details for \cname{design-markup} are
+given in a separate section below.  Each \cname{design-markup}
+instance represents a single node of the parse tree.  It encapsulates
+a wide variety of information, including the corresponding raw source
+expression, parent and subordinate parse trees (i.e.,
+\cname{design-markup} instances), row and column position within the
+text buffer, and the syntactic category (i.e.,
+the grammar nonterminal) of the parse tree node.
+
+
+
+
+\section{The Designer OOP Class Structure}
+
+The designer makes extensive use of existing {\sc SWL} classes, and also
+defines several new classes of its own.  A general discussion of the
+{\sc SWL} class system is available in \cite{SWL}; here we will focus on the
+{\sc SWL} classes and methods most relevant to the designer, and on the
+newly defined classes that are unique to the designer.
+
+At the coarsest architectural level, the designer may be viewed as a
+specialization of a more general tool: the editor.  Both the editor
+and the designer introduce the new OOP classes described below.
+
+Each described class is partitioned into one of four categories:
+
+\begin{description}
+
+\item[Core]	is a feature that is intrinsic to {\sc SWL} proper.
+
+\item[Support] is a feature that is not intrinsic to {\sc SWL}, but is found in
+	  several other {\sc SWL} applications.  (These features typically
+	  are defined in files located in the ``common'' subdirectory of a {\sc SWL} 
+	  release directory).
+
+\item[Editor]  is a feature that was developed for the editor.
+
+\item[Designer] is a feature that was developed specifically for the
+	  designer.
+
+\end{description}
+
+
+
+
+\begin{class}{text}{}{Core}
+
+\cname{text} is the parent of all more-specialized text buffer widget
+classes.  The designer uses two instances of a \cname{text} subclass, one
+for the main edit window that contains the user's design code, and one
+for the {\em mini-buffer}, i.e., the one-line message window immediately
+above the edit window.
+
+
+\paragraph{Offsets vs. Indexes}
+
+A location within a text widget buffer is often represented in either
+of two ways: as an offset (in characters) from the beginning of the
+text buffer (with each ``newline'' counting as one character), or as a
+Scheme pair whose {\sf car} is the column (x coordinate) and whose
+{\sf cdr} is the row (y coordinate).
+
+Most {\sc SWL} methods expect location arguments to be represented as
+indexes (pairs), but sometimes it is more convenient to work with
+offset representation.  The procedure {\sf offset-$>$index} converts a
+location from offset to index representation.
+
+The Scheme tokenizer ({\sf read-token}) returns a text buffer location
+as an offset, so {\sf offset-$>$index} is frequently called to convert
+such locations into indexes.
+
+See the {\sc SWL} documentation for more specific information about
+\cname{text}.
+\end{class}
+
+
+
+\begin{class}{scheme-text}{text}{Support}
+
+\cname{scheme-text} is a direct subclass of \cname{text} that provides
+support for display and editing of Scheme expressions.  Code
+visualization aids such as parenthesis balancing, code indentation,
+and lexical region marking (boxing) are provided here.
+
+The expression collapser/outliner feature developed for the designer
+project is actually implemented here.  Within \cname{scheme-text} the
+feature is known as ``outline mode.''  The {\sf mouse-press}, {\sf
+mouse-release}, and {\sf mouse-motion} methods are all specialized to
+implement the collapser/outliner.
+\end{class}
+
+
+
+
+\begin{class}{edit-text}{scheme-text}{Editor}
+
+\cname{edit-text} adds basic editor functionality to
+\cname{scheme-text}, such as expression searching and cut/copy/paste.
+\end{class}
+
+
+
+
+\begin{class}{design-text}{edit-text}{Designer}
+
+\cname{design-text} adds support for Locked and Unlocked designer modes,
+and hooks for invoking the design parser in Locked Mode.
+
+\begin{method}{add-version}{ tag}{}
+Creates a new node in the version tree (see procedure {\sf
+vtree-add-version} below) tagged with argument {\sl tag} (a string),
+and with the entire current contents of the edit-buffer as the value
+(a string).  The new node becomes a child of the currently selected
+node (given by instance variable {\sf curr-version}) of the version
+tree.
+\end{method}
+\end{class}
+
+
+
+
+
+
+\begin{class}{voval}{oval}{Designer}
+
+
+\cname{voval} adds support for tree nodes drawn in the Design History window. A
+\cname{voval} instance also represents a single design version.
+
+
+\begin{method}{mouse-press}{ x y modifiers}{}
+
+Switches the designer from the current design (i.e., the previously
+selected design version) to {\sf self} (i.e., the newly selected
+design version).
+\end{method}
+
+
+\begin{method}{draw-marker}{}{}
+Draws the square (the ``marker'') that denotes the currently selected
+node in the version tree.
+\end{method}
+\end{class}
+
+
+
+
+\begin{class}{vline}{line}{Designer}
+
+\cname{voval} adds support for version tree arcs drawn in the Design
+History window.
+\end{class}
+
+
+
+\begin{class}{vtool}{canvas}{Designer}
+
+\cname{voval} adds support to the canvas widget, which is used as the
+container for the Design History tree diagram.
+
+\begin{method}{redraw}{}{}
+Deletes all existing graphical objects (lines, rectangles, ovals) in
+the Design History window, which denote the old version tree, and
+redraws the entire version tree.
+\end{method}
+\end{class}
+
+
+
+
+
+
+\begin{class}{markup}{}{Core}
+
+\cname{markup} implements the basic functionality of Tk tags, which
+enable portions of text contained in a \cname{text} instance to
+displayed with emphasis (color or alternate font), and to be {\em
+reactive} (e.g., responsive to mouse clicking).  A \cname{markup}
+instance is associated with one or more \cname{text} instances by
+invoking the \cname{markup} method {\sf apply-markup} with the text
+widget instance as an argument.
+
+\cname{markup} instances are used extensively in the designer in
+Locked Mode to denote lexical variable references and bindings, and to
+provide mouse functions to these subexpressions.
+\end{class}
+
+
+
+\begin{class}{collapsoid}{markup}{Support}
+
+\cname{collapsoid} implements the program collapser/outliner feature,
+which permits program subexpression forms to be collapsed to a point
+(a single highlighted character), and later recovered (expanded) with
+a mouse click.  Collapsed expressions may be nested inside another
+collapsed region.
+
+\begin{method}{collapse}{ twgt ix match cclass}{}
+
+Collapses the Scheme expression in text widget {\sl twgt} between location
+{\sl ix} and location {\sl match}.  The expression is replaced by a single
+character (currently '\$'), highlighted in blue.  {\sl cclass} is unused.
+
+\end{method}
+
+
+
+\begin{method}{reapply}{ ix}{}
+
+When a collapsoid is uncollapsed, reapply restores all nested
+collapsoids that had been removed when the nesting collapsoid was
+created.
+
+\end{method}
+
+
+
+\begin{method}{move-to}{ ix}{}
+
+Relocates the collapsoid to index {\sl ix}.
+
+\end{method}
+
+
+\begin{method}{change-to-nested}{ ix}{}
+	
+Marks the collapsoid as nested within another collapsoid.
+
+\end{method}
+
+
+\begin{method}{expand}{}{}
+
+Expands the collapsoid, restoring the original text and 
+reapplying any nested collapsoids.
+
+\end{method}
+
+
+\begin{method}{expand-all}{}{}
+
+Expands the collapsoid and all nested collapsoids.
+
+\end{method}
+\end{class}
+
+
+
+
+
+\begin{class}{design-markup}{markup}{Designer}
+
+\cname{design-markup} adds designer-specific functionality to markups,
+such as meaning-preserving {\sf let} binding relocation, highlighting and
+blinking of bindings and lexical variables, and substitution of
+binding values for references.
+
+In Locked Mode, every lexical variable declaration, {\sf let} binding, and
+lexical variable reference is highlighted in color (see table
+\ref{tab:highlight}).  In addition, moving the mouse cursor over a
+{\sf let} binding will cause the entire binding to be highlighted.
+All such functionality is implemented in terms of design markups.
+
+A single design markup encapulates a single expression (program text)
+in the user's design, the subexpressions of the expression if any, and
+the current lexical environment, all of which were obtained during the
+parsing of the design.  This information is combined with enough GUI
+information (e.g., the row and column location of the expression in
+the text buffer) to permit the highlighting and mouse capabilities to
+be implemented.
+
+For example, a single {\sf let} binding in a user's design will be
+represented by (at least) two design markups: one to hold the entire
+binding (with the bound variable and binding right-hand side as
+subexpressions), and one to hold the bound variable itself (with a
+null subexpression). If the right-hand side itself contains variable
+references, additional design markups will be created for these as
+well.
+
+
+\begin{method}{move-to}{ dstidx}{}
+
+Moves the expression bound to the current instance to screen location
+{\sl dstidx} (a row, column pair).
+
+\end{method}
+
+
+\begin{method}{mouse-press}{ text x y mods}{}
+
+Handles a mouse button click when the cursor is placed on a
+\cname{design-markup} in the designer's text window.
+
+The actual behavior of {\sf mouse-press} depends on the type of {\sf
+design-markup} encountered, e.g., a lexical variable reference is
+handled differently from a binding.
+
+\end{method}
+
+
+\begin{method}{mouse-enter}{ text x y mods}{}
+
+Handles the highlighting (coloring) of certain \cname{design-markup}
+types, such as those for lexical variable references and bindings,
+when the mouse cursor moves over the \cname{design-markup}.
+
+\end{method}
+
+
+\begin{method}{mouse-leave}{ text x y mods}{}
+
+Complementary to {\sf mouse-enter}, handles unhighlighting of certain
+\cname{design-markup} types that are highlighted upon cursor entry.
+
+\end{method}
+
+
+
+\begin{method}{enable-blinking}{}{}
+
+Causes the current \cname{design-markup} to start blinking in a
+contrasting color.  Blinking is implemented using a separate {\sc SWL}
+thread.
+
+\end{method}
+
+
+\begin{method}{disable-blinking}{}{}
+
+Turns off blinking of the current \cname{design-markup}.
+
+\end{method}
+\end{class}
+
+
+
+\section{Auxiliary Procedures}
+
+While much of the procedural code in the designer is in the form of
+methods defined within classes, some important functionality is
+defined outside the class system, as Scheme global procedures.
+
+
+
+\begin{proc}{make-popup}{ pop-ttls pop-acts}{}
+
+{\sf make-popup} creates and returns a popup menu.  {\sl pop-ttls} is a Scheme
+list of strings that form the popup menu items.  {\sl pop-acts} is a Scheme
+list of thunks that perform the actions corresponding to the menu
+items.
+
+{\sf make-popup} is called by the mouse-press method of \cname{design-markup}, for
+those \cname{design-markup} instances that have associated popup menus (currently only
+lexical variable references).
+\end{proc}
+
+
+\begin{proc}{make-pretty}{ expr-str}{a pretty-printed string}
+
+{\sf make-pretty} takes a Scheme expression as a string, {\sl
+expr-str}, and applies the Chez Scheme pretty-printer to it, which
+elides most of the expression's substructure.  The resultant string is
+then suitable for display in the Design History window.
+
+\end{proc}
+
+
+
+\begin{proc}{new-design}{}{}
+
+Executes the designer within a new {\sc SWL} window.  Multiple designers
+may execute concurrently.
+
+\end{proc}
+
+
+
+\begin{proc}{occurs-free-except-for?}{ var expr except}{}
+
+{\sf occurs-free-except-for?} determines whether variable {\sl var} (a
+Scheme symbol) occurs free in expression {\sl expr}, with
+subexpression {\sl except} excluded from the computation.  Used to
+determine whether moving a binding is semantically correct.
+
+\end{proc}
+
+
+
+\begin{proc}{parse-it}{ text-wgt}{a boolean}
+
+A key procedure in the designer, {\sf parse-it} performs a recursive
+descent (top-down) parsing of the contents of the text widget buffer,
+which is assumed to contain a valid design.  {\sl text-wgt} must be
+the {\sc SWL} text widget instance that contains the user's design
+text. {\sf parse-it} returns {\sf \#t} if parsing was successful, else
+{\sf \#f}.  The LL(1) grammar for the parser is given in table
+\ref{tab:grammar}.
+
+The parser uses the conventional division of textual analysis into
+separate lexical scanning and parsing: lexical scanning is done by the
+procedure {\sf read-token} (described below), which converts
+characters of design text into Scheme tokens. The output of {\sf
+read-token} is then used as the input to {\sf parse-it}.  {\sf
+read-token} also provides the row and column information on each token
+scanned, which is essential for implementing the interactive features
+of the designer.
+
+As a side-effect, {\sf parse-it} assigns the parse tree to {\sf
+text-wgt}. A parse tree is a set of \cname{design-markup} instances,
+each of which encapsulates a large amount of design information:
+
+\begin{itemize}
+
+\item the starting and ending row and column of the expression in the
+text buffer, and the parse token obtained from the lexical scanner
+({\sf read-token}),
+
+\item the current lexical environment, i.e., the current set of
+lexical variables declared at any point during parsing,
+
+\item the syntactic category (or grammar nonterminal) for the
+expression (e.g., datum, binding),
+
+\item a list of {\em holes,} i.e., the regions of buffer text that
+belong to subexpressions of the current expression represented by
+nested \cname{design-markup} instances, used to ensure that any nested
+\cname{design-markup} instances are not shadowed by the current
+\cname{design-markup}.
+
+\item the parent \cname{design-markup}, if any, (else {\sf \#f})
+
+\item the entire parse tree as a Scheme expression, (a symbol if the
+parse tree is a terminal, else a Scheme list of parse sub-trees).
+
+\item a symbol if the parse tree is a terminal, else a list of the 
+\cname{design-markup} instances that represent the parse sub-trees.
+
+\end{itemize}
+
+As another side-effect, {\sf parse-it} invokes the {\sf apply-markup}
+\cname{text} method for each \cname{design-markup} instance, causing
+regions of text to take on highlighting (color) and to be become
+sensitive to mouse input.
+
+As additional side-effects, if {\sf parse-it} cannot parse its input,
+it marks the offending input token in red and displays an error
+message in the mini-buffer.
+
+\end{proc}
+
+
+
+\begin{proc}{read-token}{ ofs . ip}{\sl type, token, start, end}
+
+{\sf read-token} reads the next Scheme lexical token from input port
+{\sl ip}, or from {\sf current-input-port} if the optional argument
+{\sl ip} is not supplied.  
+
+{\sf read-token} returns four values: the type of the token in {\sl
+type} (e.g., {\sf atomic} for a symbol), the token itself in {\sl
+token} (e.g., the name of a symbol), and the starting and ending
+character positions of the token in the input in {\sl start} and {\sl
+end}, counting from the initial offset argument {\sl ofs}.
+
+See the documentation file, {\sf read-token.doc}, for more
+information.
+
+\end{proc}
+
+
+
+\begin{proc}{show-popup}{ pop x y}{}
+
+{\sf show-popup} causes a popup menu {\sl pop}, created by {\sf
+make-popup}, to be displayed at screen coordinates {\sl x} and {\sl
+y}.  The coordinates are absolute, i.e., always from the upper left
+corner of the display screen.
+
+\end{proc}
+
+
+
+\begin{proc}{vtree-add-version}{ v cv vtree}{a new vtree}
+Accepts versions {\sl v} and {\sl cv}, and version tree {\sl vtree},
+and returns the following:
+
+\begin{itemize}
+\item if {\sl v} is a version in {\sl vtree}, returns a new vtree with {\sl cv} as
+     a child of {\sl v},
+
+\item else, returns the original vtree.
+
+\end{itemize}
+
+A {\em version} is an instance of the {\sl version} structure, defined by:
+
+\begin{scheme}
+(define-structure (version tag item))
+\end{scheme}
+
+{\sl tag} is a Scheme string denoting the kind of transformation that
+yielded the version, e.g., ``subst'').  {\sl item} is a Scheme string that
+is the entire contents of the edit-buffer for that version.
+
+A {\em vtree} is an instance of the {\sl vtree} structure, defined by:
+
+\begin{scheme}
+(define-structure (vtree version children))
+\end{scheme}
+
+A {\sl vtree} is an n-ary tree defined in the conventional way: an
+n-ary tree is a single ``node,'' together with zero or more n-ary
+trees as children.
+
+{\sl version} is the attribute of a single node of a vtree.  {\sl
+children} is a Scheme list of zero or more child vtrees.
+
+\end{proc}
+
+
+
+
+
+
+\section{Program Files and Pathnames}
+
+
+Much of the designer implementation is in a single file, {\sf
+design.ss}.  However, key portions of the designer are defined in
+separate files, as follows.
+
+
+\begin{description}
+
+
+\item[../common/scrollframe.ss]
+
+Provides the horizontal and vertical scrollbar capability for the text
+widget.
+
+
+\item[../common/fontmenu.ss]
+
+Provides the font submenu for the menu-bar.
+
+
+\item[../common/select-file.ss]
+
+Provides a file-selection box capability, which is used for loading
+and saving design files.
+
+
+\item[../common/warning-dialog.ss]
+
+Provides a dialog box capability, which is used for issuing warning
+messages to the user.
+
+
+\item[../common/auxio.ss]
+
+Provides certain useful text-widget and file I/O utilities.
+
+
+\item[../common/worrier.ss]
+
+Provides the {\em worried face} icon, which is displayed whenever the text
+buffer is modified but not saved to disk.
+
+
+\item[../common/scheme-text.ss]
+
+Provides basic Scheme language editing support for the text-widget, as
+\cname{scheme-text}, a subclass of \cname{text}.
+
+
+\item[../common/worrier.ss]
+
+Provides the {\em worried face} icon, which is displayed whenever the text
+buffer is modified but not saved to disk.
+
+
+\item[../edit/edit-text.ss]
+
+Provides the basic Scheme text-widget functionality for the text
+editor application, as \cname{edit-text}, a subclass of
+\cname{scheme-text}.
+
+
+\item[read-token.ss]
+
+Provides the position-tracking Scheme lexical scanner, {\sf
+read-token}.
+
+
+\item[read-token.doc]
+
+Provides documentation for the position-tracking Scheme lexical
+scanner, {\sf read-token}.
+
+
+\item[popup.ss]
+
+Provides a popup menu capability.
+
+
+\item[dm.ss]
+
+Provides the \cname{design-markup} class and its auxiliary procedures.
+
+\item[vtool.ss]
+
+Provides the functionality for the Design History window.
+
+\end{description}
+
+
+
+
+
+\section{An LL(1) Grammar for the Designer}
+
+Table \ref{tab:grammar} below defines the LL(1) grammar used by the
+designer.  The names of the nonterminals forms the set of syntactic
+categories; the variable {\sf syncat} of each \cname{design-markup}
+instance is bound to one of these symbols. The instance variable {\sf
+exprdm} corresponds to the right-hand side of the grammar rule; it is
+bound to a list structure containing \cname{design-markup} instances
+for each non-terminal that appears in the right-hand side.
+
+
+\begin{table}\centering
+<
+\begin{verbatim}
+Expr     -> Form  | Literal | Varref | AbbrevQuote
+Form     -> ( Lambda | ( Define | ( Let... | ( If | ( QuoteForm | 
+            ( App | ()
+  Lambda   -> lambda ( Formals* ) Expr ) ;; no sequences
+  Define   -> define Var Expr )
+  Let      -> let Bindings Expr ) ;; no sequences
+  LetStar  -> let* Bindings Expr ) ;; no sequences
+  Letrec   -> letrec Bindings Expr ) ;; no sequences
+  If       -> if Expr1 Expr2 Expr3 ) | ( if Expr1 Expr2 )
+  QuoteForm-> quote Datum )
+  App      -> Expr+ )
+Expr+    -> Expr | Expr Expr+    
+AbbrevQuote-> ' Datum
+Bindings -> ( Bindings* )
+Bindings*-> <epsilon> | Binding Bindings*
+Binding  -> ( Var Expr )
+Formals* -> <epsilon> | Var Formals*
+Body*    -> <epsilon> | Expr Body* ;; currently unused
+Datum    -> Literal | Sym | ( Datum* ) | ( Datum Datum* . Datum )
+Datum*   -> <epsilon> | Datum Datum*
+Literal  -> num | char 
+\end{verbatim}
+
+\caption{An LL(1) Grammar for the Designer}\label{tab:grammar}
+\end{table}
+
+
+
+
+\section{Acknowledgements}
+
+Oscar Waddell, chief architect of {\sc swl}, collaborated closely the
+author.  R. Kent Dybvig supervised the overall {\sc swl} project and
+is the author of Chez Scheme.  Steve Johnson provided the research
+direction for the designer.
+
+
+
+
+\begin{thebibliography}{99}
+
+\bibitem{TSPL} R. Kent Dybvig. {\em The Scheme Programming Language},
+Second Edition, Prentice-Hall, Inc., Upper Saddle River, New Jersey,
+1996.
+
+\bibitem{CSSM} R. Kent Dybvig.  {\em Chez Scheme System Manual,
+Revision 2.4}.  Cadence Research Systems, Bloomington, Indiana. 1994.
+
+\bibitem{TCLTK} Ousterhout, J. {\em Tcl/Tk}, Sun Microsystems
+Laboratories.
+
+\bibitem{SWL} Waddell, O. {\em The SWL Manual}, Indiana University, 1997.
+
+
+
+\end{thebibliography}
+
+
+
+
+
+
+
+\end{document}
+

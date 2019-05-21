@@ -1,0 +1,65 @@
+% Copyright (c) 1996 Oscar Waddell
+%
+% See the file "Notice" for information on usage and redistribution
+% of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+\documentclass{tspl}
+\input{macros}
+
+\iflatex
+\raw{
+\usepackage{fullpage}
+\usepackage{makeidx}
+\tolerance=5000
+}
+\fi
+
+\ifhtml
+\documenttitle{SWL Reference Manual}
+\fi
+
+\makeindex
+
+\begin{document}
+\frontmatter
+\iflatex
+\include{title}
+\tableofcontents
+\fi
+
+\ifhtml
+\raw{\raw{
+<h1 style="text-align: center">SWL Reference Manual</h1>
+<h2 style="text-align: center">Oscar Waddell<br>with<br>John B. Zuckerman</h2>
+<h2 style="text-align: center">February 2006</h2>
+}}
+\begin{contents}
+\fi
+
+\include{preface}
+\mainmatter  % this turns on the picture chapter headers...
+
+\include{body}
+
+\include{threads}
+
+\include{summary}
+
+\include{faq}
+
+\backmatter
+
+\iflatex
+\begingroup\tolerance=2000
+\printindex
+\endgroup
+\else
+\chapter{Index}
+\makeindex
+\fi
+
+\ifhtml
+\end{contents}
+\fi
+\end{document}
+

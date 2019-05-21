@@ -1,0 +1,63 @@
+include ..\..\config.make
+
+.SUFFIXES:
+.SUFFIXES: .c .h .ss .so
+
+SOURCE = base1.ss base2.ss button.ss callback.ss canvas.ss canvasitem.ss \
+         dialog.ss entry.ss event.ss foreign.ss frame.ss generics.ss \
+         image.ss init.ss io.ss label.ss listbox.ss load.ss markup.ss menu.ss \
+         option.ss proto.ss require.ss scale.ss scrollbar.ss syntax.ss \
+         teventloop.ss text.ss tkstream.ss ../threads/threads.ss selection.ss \
+	 preferences.ss ../../apps/common/scrollframe.ss \
+         console.ss module-setup.ss server.ss \
+	 ../../apps/common/app-text.ss \
+	 ../../apps/common/app.ss \
+	 ../../apps/common/arrows.ss \
+	 ../../apps/common/auxio.ss \
+	 ../../apps/common/flex-button.ss \
+	 ../../apps/common/fontmenu.ss \
+	 ../../apps/common/help-text.ss \
+	 ../../apps/common/popup.ss \
+	 ../../apps/common/scheme-text.ss \
+	 ../../apps/common/scrollframe.ss \
+	 ../../apps/common/select-file.ss \
+	 ../../apps/common/semaphore.ss \
+	 ../../apps/common/warning-dialog.ss \
+	 ../../apps/common/worrier.ss \
+	 ../../apps/edit/edit-text.ss \
+	 ../../apps/edit/edit.ss \
+	 ../../apps/htmlview/html-text.ss \
+	 ../../apps/htmlview/html.ss \
+	 ../../apps/htmlview/htmlview.ss \
+	 ../../apps/htmlview/www.ss \
+	 ../../apps/repl/repl-text.ss \
+	 ../../apps/repl/repl-text.ss \
+	 ../../apps/repl/repl.ss 
+
+CSOURCE = win32.c foreign.c
+
+all: $(prefix) $(prefix)\swl.boot $(prefix)\$(FOREIGN_OBJ) script
+
+$(prefix):
+	mkdir $(prefix)
+
+$(prefix)\swl.boot: $(SOURCE) make.ss build-script
+	echo $(prefix)\swl.boot | $(Scheme) make.ss
+
+$(prefix)\$(FOREIGN_OBJ): $(CSOURCE) ../../config.make
+	$(CC) $(CFLAGS) -DWIN32 $(CSOURCE) \
+	   /link -dll -out:$(prefix)\$(FOREIGN_OBJ) $(SHLIBS) shell32.lib
+
+script:
+	del $(prefix)\swl.bat
+	@copy << $(prefix)\swl.bat > nul
+@set SWL_ROOT=$(SWL_ROOT)
+@set SWL_LIBRARY=$(SWL_LIBRARY)
+@path=%path%;$(TCL_BIN)
+@$(Scheme) -b $(prefix)\swl.boot %1 %2 %3 %4 %5 %6 %7 %8 %9
+<<
+	copy $(prefix)\swl.bat ..\..
+
+clean:
+	-cleanso
+	del cleanso.bat build-script *.obj

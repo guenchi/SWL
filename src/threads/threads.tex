@@ -1,0 +1,1202 @@
+\documentclass{article}
+
+\title{The SWL Thread System}
+\author{John B. Zuckerman}
+
+\input{commands}
+\begin{document}
+
+\maketitle
+
+
+%-* Introduction
+
+\section{Introduction}
+
+For several years the Programming Language Laboratory of the
+Department of Computer Science at Indiana University has been
+developing a graphical user interface extension to Scheme named {\sc swl}
+(Scheme Widget Language), an integration of the Chez Scheme
+implementation of Scheme\cite{TSPL}\cite{CSSM} and the interactive
+graphics user interface capabilities of Tcl/Tk\cite{TCLTK}, plus
+additional graphical capabilities hosted entirely in Scheme.  This
+report documents the design and implementation of a major component of
+{\sc swl}: the thread system.  Threads extend standard Scheme to provide
+explicit concurrency.
+
+Although it is possible to simulate the concurrent execution of
+multiple independent graphical applications using a single thread of
+control, primarily by exploiting various locality properties (e.g.,
+keyboard input is typically associated with only one display window at
+a time), a variety of user interface problems are more elegantly
+solved by providing the Scheme application writer and the system
+implementer with access to multiple independent threads of
+control. Judicious use of multiple threads of control improves the
+modularity of both the {\sc swl} system and many of its applications.
+
+We have had several broad goals for this work:
+
+\begin{itemize}
+
+\item the thread system should be as transparent to the user, i.e.,
+the application developer, as possible.  Ideally, the system should
+retain a single-threaded ``look and feel.''
+
+\item non-threaded Scheme programs should map into the threaded system
+in a logical way,, i.e., any ordinary program that executes correctly
+in standard Scheme should execute correctly as a single {\sc swl} thread.
+
+\item the impact of thread system overhead on single-thread performance
+should be minimal.
+
+\item compatibility with Chez Scheme language extensions should be
+maintained wherever possible. (Presently, however, the Chez Scheme
+syntactic extension {\sf fluid-let} does not function with multiple
+threads as might be expected; this is fully discussed below.)
+
+\end{itemize}
+
+The Chez Scheme implementation, plus certain ``system mode''
+primitives that are available in Chez Scheme but which are not a part
+of the documented Chez Scheme user interface, provide a sufficient
+basis for implementing a thread system entirely in Scheme.  The Chez
+Scheme notions of interrupt handling and timed preemption provide a
+mechanism for interrupting execution of a Scheme program. Scheme's
+general purpose control primitive {\sf call-with-current-continuation}
+({\sf call/cc}) provides a means for defining new dynamic execution
+contexts, or {\em continuations}, and for the transfer of control from
+one continuation to another.  When augmented with appropriate
+additional information, a Scheme continuation becomes a {\em thread},
+or independently schedulable continuation.  The thread system provides
+for the creation and destruction, suspension and resumption,
+synchronization, and inspection of multiple threads of control.
+
+Although we have tolerated some dependence on Chez Scheme internal
+details, i.e., use of certain Chez Scheme system mode primitives,
+our thread system requires no modifications to Chez Scheme at the
+source code level.  However, we will also discuss potential extensions
+to Chez Scheme that may be desirable to more efficiently support the
+implementation of threads.
+
+
+%-* Language Elements for Concurrency
+
+\section{Language Elements for Concurrency}
+
+
+In this section we introduce the basic concepts used in the remainder
+of the report.  When considering the sequential flow of control within
+an executing program, the current continuation is said to represent
+the current dynamic execution context, the current stack of procedure
+activation records, or simply ``the rest of the computation.''  In
+Scheme, the primitive procedure {\sf call-with-current-continuation}
+(or {\sf call/cc}) captures the current continuation and immediately
+returns it to the running program as a first-class object.  A
+continuation object is a procedure that, when invoked with zero or
+more arguments, causes a transfer of control (called a continuation
+``throw'') to the point where the continuation was captured.  The
+arguments passed to the continuation object become the values returned
+by the call to {\sf call/cc}.
+
+The large majority of hardware processors presently available are
+uniprocessors.  Unlike a parallel processor machine, a uniprocessor is
+capable of executing only one machine instruction stream at a time.
+However, using the familiar technique of time multiplexing (``time
+slicing'') a uniprocessor may appear to perform many tasks at once by
+executing multiple independent programs in an interleaved fashion.
+The technique is to execute one program's instruction stream for a
+(usually brief) period of time and, when the time allotted has
+expired, to suspend that program and start another.  This approach to
+concurrency known as {\em multitasking\/} or {\em multiprogramming},
+and it is the approach that we take here.  We do not address
+concurrency in a multiprocessor environment.
+
+{\sf call/cc} captures but does not suspend the current continuation.
+A Scheme program running in a system extended for concurrency,
+however, may request its own suspension, i.e., temporarily give up
+control to another Scheme program, by calling a system primitive that
+we will name {\sf yield}. {\sf Yield} (1) captures the running
+program's current continuation and stores it in a data structure, and
+(2) transfers control to another continuation previously captured by a
+call to {\sf yield}. The other continuation may or may not represent a
+separate and unrelated computation.  In either case, in this report we
+will call the data structure modified by {\sf yield} that stores the
+continuation a {\em thread}, and we will term self-requested
+suspension via {\sf yield} {\em non-preemptive multitasking}.  More
+precisely, we define a thread to be a suspended Scheme continuation
+object that is unique to the thread stored together with certain
+additional data.  A running thread is a special case; it is not
+suspended, and the meaning of its stored continuation is undefined.
+In our uniprocessor architecture, there is at most one running thread
+at any moment (however, many threads may be ready to run). When the
+running thread invokes another thread's continuation by calling {\sf
+yield}, we say that it {\em starts\/} or {\em runs\/} the other
+thread.  Threads that cooperatively exchange control in this way are
+also known as {\em co-routines}.
+
+We have described how an existing thread may relinquish control to
+another thread, but we have not yet described how to create new
+threads. Therefore, we introduce a new primitive, {\sf fork}, which
+takes a thunk (i.e., a Scheme procedure of no arguments) and creates a
+new thread from it. {\sf fork} stores the new thread in a system data
+structure and immediately returns an unspecified value to the caller.
+Since by definition each thread contains a unique continuation object,
+{\sf fork} must invoke {\sf call/cc} in order to obtain the new
+thread's continuation.  Since {\sf fork} immediately returns an
+unspecified value to the caller, we do not thereby obtain a mechanism
+for thread synchronization or communication.  Therefore, in contrast
+to some other parallel or concurrent systems, threads provide {\em
+independent concurrency}.  For the moment, however, we may assume that
+threads may communicate by means of assignment to shared
+variables. Later, we will introduce appropriate synchronization and
+communication primitives.
+
+An executing Scheme program always has a continuation, or ``rest of
+the computation.''  In a non-interactive implementation, control may
+be transferred to a toplevel Scheme procedure that represents a
+program by the operating system. In this case control should return to
+the operating system when the Scheme program ``terminates'' by
+returning to its caller.  However, Chez Scheme and many other systems
+provide an {\em interactive\/} user interface.  That is, they contain
+a program interpreter known as a {\em read-eval-print loop\/}, or 
+{\sc repl}.  A {\sc repl} reads a Scheme program from an input device
+(typically a keyboard), evaluates it, and prints the returned value on
+an output device (typically a screen or window).  The {\sc repl} then
+loops, waiting for another input. Generally, a {\sc repl} never
+terminates on its own accord.
+
+In a conventional non-threaded Scheme system, one may consider a {\sc repl}
+to be a part of the external non-Scheme environment or even as a part
+of the operating system, whether or not the {\sc repl} is actually
+implemented in Scheme.  However, it is possible (and customary) to
+implement a {\sc repl} as a Scheme procedure.  Here we will exploit the view
+that a {\sc repl} is just an ordinary Scheme procedure that will execute
+within its own thread.
+
+While a {\sc repl} is waiting for input it generally has nothing to compute,
+so it may relinquish control until the next input expression becomes
+available.  In a non-threaded system, a {\sc repl} typically does this by
+calling the Scheme primitive {\sf read}. If input is immediately
+available, read returns it, otherwise read informs the underlying
+operating system that the Scheme task is willing to block until input
+becomes available.  This frees the operating system to suspend
+execution of the Scheme task so that other waiting tasks may be
+performed.  Once the operating system determines that {\sc repl} input has
+become available, it will once again schedule the Scheme task for
+execution.
+
+In our multi-threaded design, the underlying operating system is not
+informed that a given thread is willing to suspend.  Instead as
+defined above, a suspending thread relinquishes control by calling the
+thread system primitive {\sf yield}, and it is {\sf yield}'s
+obligation to suspend the current thread and start another.  Thus, the
+scheduling of Scheme threads is handled entirely within Scheme, and
+the underlying operating system schedules only unrelated non-Scheme
+tasks.  From the perspective of the operating system, the running
+Scheme system itself represents a single task, and the operating
+system has no knowledge of the multi-threading that is taking place
+within Scheme.
+
+A {\sc repl} is one kind of non-terminating program that handles external
+requests and runs in its own thread, but there are others.  We will
+call the class of all such programs {\em servers}.  Another kind of
+server that is often found in interactive graphical applications is an
+{\em event loop}.
+
+Not all threads are servers, though, and some threads compute only for
+a finite length of time.  What happens when a thread has completed its
+computation?  Since we have defined a thread to be an independently
+schedulable continuation, there is no parent continuation to which
+control should be returned.  Instead, we arrange for the thread to
+``terminate,'' by permanently suspending its execution.  A thread may
+terminate by passing an appropriate flag value to {\sf yield} that
+indicates the thread should be suspended and never restarted.
+
+The type of concurrency we have just described is sometimes called
+{\em non-preemptive multitasking}. That is, an executing thread
+retains control until it decides to relinquish it by explicitly
+calling {\sf yield}.  However, there are situations in which the
+system should force the interruption of the current thread.  Such
+situations also arise in conventional, non-threaded systems, e.g.,
+when garbage collection becomes necessary, or when the user interrupts
+a running program.  A thread system benefits from another kind of
+interrupt mechanism known as {\em timed preemption}.  In this case a
+running thread is allotted a time quantum, typically a fraction of a
+second, and the system keeps track of how much of the quantum the
+thread has consumed.  If the thread completes its computation before
+the time quantum has been exhausted, then no action is taken by the
+system.  However, if the thread exhausts its quantum before
+terminating, the system suspends the thread by forcing a call to {\sf
+yield}.
+
+In Chez Scheme a running program may be allocated a time quantum in
+the form of ``timer ticks.''  When the current thread's timer ticks
+are exhausted the thread is interrupted and control is transferred to
+the timer interrupt handler.  The timer interrupt handler is a Scheme
+procedure that is defined by the thread system, but which executes in
+the context of the currently running thread.  If the handler
+determines that the thread has exceeded its quantum it will call {\sf
+yield}, which effects the thread's suspension just as if the thread's
+own code had called {\sf yield} explicitly.
+
+It is sometimes necessary to protect certain regions of an executing
+program from interruption.  Consider a program fragment that
+increments a global variable.  To do this the program will: 
+
+\begin{itemize}
+
+\item read
+the current value stored in the variable, 
+
+\item increment the value by
+one, and 
+
+\item update the variable by writing back the incremented
+value.  
+
+\end{itemize}
+
+This sequence is {\em non-atomic}, i.e., it is subject to interruption
+at any step.  If an interruption cannot affect the computation, then
+there is no harm in this.  However, should another thread also attempt
+to execute this same region of code, the program steps could become
+interleaved or superimposed in a way that causes the variable to be
+updated incorrectly. A sequence of program steps that must be executed
+without interruption is called a {\em critical section}.
+
+To prevent unwanted interleaving, the author of a multithreaded
+program must identify each region of code that must be executed
+atomically, and which therefore represents a critical section.  The
+programmer then protects each atomic region from interruption by
+enclosing the code in the Chez Scheme special form {\sf
+critical-section}.  The body of {\sf critical-section} is executed
+atomically, i.e., with interrupts disabled.  Upon exit from {\sf
+critical-section}, interrupts are automatically reenabled.  Full
+details of {\sf critical-section} may be found in \cite{CSSM}.
+
+We have now covered the basic language elements and system primitives
+required by the thread system.
+
+
+%-* Previous Work
+
+\section{Previous Work}
+
+This report documents the current version of the {\sc swl} thread system.
+The latest version builds on the experience gained and lessons learned
+from implementing and using the earlier attempts, and corrects serious
+design flaws inherent in those versions.
+
+Given the intrinsic support for multiple dynamic execution contexts
+provided by continuations, it is relatively straightforward to
+construct a system that supports explicit concurrency within the
+language. However, it is considerably more difficult to develop a
+system in which all of the details of concurrency management have been
+adequately addressed.  The earlier versions have faltered because of
+these problems. This section reviews the difficulties we encountered
+previously.
+
+As will be discussed later, correct handling of continuation winders
+poses some subtle problems. Earlier versions of the thread system
+always invoked continuation winders on a thread context switch,
+leading to subtle bugs related to reentrancy of {\sf yield}.
+
+Some earlier versions of the thread system created new thread control
+blocks for interrupted threads.  This ``migrating thread identity''
+property was expedient for implemention, but non-intuitive and overly
+complex for the user.  In the current system thread identity does not
+migrate.
+
+Earlier versions of the system did not distinguish between resettable
+(server) and non-resettable (non-server) threads.  All threads were
+considered to be resettable, which could erroneously cause multiple
+threads to ``listen'' for input on the same port.
+
+The implementation of queues in some earlier versions led to awkward
+problems in computing the queue on which a specific thread was
+enqueued.  In the current implementation, given an enqueued thread,
+computing its queue is straightforward.
+
+Earlier versions of the system provided debugger support by providing
+a dedicated ``debugger thread'' attached to the console.  However,
+this idea did not support multiple concurrently executing programming
+environments.  (In the current system the debugger is available as an
+ordinary procedure.)
+
+Earlier versions of the system included a non-blocking input-output
+subsystem.  The current version does not directly provide non-blocking
+input-output (however, {\sc swl} implements non-blocking input-output ports
+on top of the thread system).
+
+
+%-* Current System Architecture
+
+\section{Current System Architecture}
+
+This section describes the architecture of the current version of the
+{\sc swl} thread system.  The thread system extends Chez Scheme to provide
+{\sc swl} system and application developers with independent concurrency via
+multiple threads of control. 
+
+The thread system combines a Scheme continuation that is computed in a
+special kind of way, called a {\em thread continuation\/} or {\em tk},
+together with an additional data structure called a {\em thread
+control block\/} or {\em tcb}, to form a {\em thread}, or
+independently schedulable continuation.  Each thread is a member of a
+collection of one or more related threads called a {\em process}. A
+process has its own associated data structure called a {\em process
+control block\/} or {\em pcb}. Grouping threads into processes
+facilitates the sharing of certain resources among the group.
+
+
+%-** Continuations and Threads
+
+\subsection{Continuations and Threads}
+
+We now discuss the use of continuations within the thread system in
+detail.  While all Scheme implementations provide regular continuation
+objects, variations of regular continuations have been proposed from
+time to time.  The thread system uses one such variant provided by
+Chez Scheme, a {\em one-shot continuation}, and defines its own
+variant, a {\em thread continuation}.
+ 
+A one-shot continuation differs from a regular continuation in that it
+may be invoked at most one time.  When a one-shot has been invoked, it
+is said to be ``shot;'' it is an error to call a one-shot continuation
+that has already been shot. (In addition, it is an error in Chez
+Scheme to attempt to inspect a shot one-shot using the Chez Scheme
+inspector.)  This restriction on the full generality of continuations
+may be exploited to obtain a more efficient implementation.  Since the
+thread system must obtain a fresh thread continuation object on each
+context switch (i.e., on each call to {\sf yield}), it may use
+one-shots in place of regular continuations.  A one-shot continuation
+is obtained by calling {\sf call/1cc}.
+
+However, there are two reasons why not all continuations, whether
+regular or one-shot, are suitable for use as thread continuations.
+First, since by definition each thread represents an independent
+computation, a thread continuation has no parent computation to which
+to return.  Therefore, a thread continuation must be made to
+``terminate'' once the underlying computation is finished.  To explain
+the second reason we must first introduce the {\sf dynamic-wind}
+primitive and continuation winders.
+
+Some Scheme systems, including Chez Scheme, provide a primitive
+procedure known as {\sf dynamic-wind}, which the program author may
+use to ``protect'' program state against changes in normal flow of
+control, such as which may occur when a continuation is invoked. {\sf
+dynamic-wind} takes three thunks as arguments, called {\sf in}, {\sf
+body}, and {\sf out}. The three thunks are executed in order, and the
+return value of the {\sf dynamic-wind} is the return value of the
+body.  However, if the body throws to a continuation that was not
+obtained (by {\sf call/cc} or {\sf call/1cc}) within the body, then
+{\sf out} will be evaluated before the throw is performed. Finally, if
+execution of the body is subsequently restored by a throw to a
+continuation that was captured within the body, {\sf in} will be
+evaluated before the throw.  Thus, the in and out thunks of {\sf
+dynamic-wind} may be used to ``guard'' the body even in the presence
+of continuation throws.
+
+In Chez Scheme the in and out thunks established during a call to {\sf
+dynamic-wind} are called {\em winders}, and the ordered collection of
+pairs of winders established by all the active calls to {\sf
+dynamic-wind} is automatically stored with the current continuation,
+in a Scheme list.  When a new continuation object is obtained, the
+current winders list is also associated with the new continuation
+object.
+
+We are now ready to define thread continuations.  A thread
+continuation is a regular Scheme continuation whose winder list is
+disjoint from the winder list of any other thread continuation.  More
+precisely, no sublist of the continuation's winders is {\sf eq?} to
+any sublist of winders of another thread continuation.\footnote{This
+is a slight oversimplification. In reality, all thread continuations
+share the single winder list of the non-threaded continuation that was
+in effect when the thread system was bootstrapped.} This restriction
+ensures that each thread represents a dynamic execution context that
+is independent of any other thread, i.e., that there is no logical
+nesting relationship between thread continuations.
+
+Thus, on a call to {\sf yield} we might expect the following sequence
+to occur: first, the entire set of the current thread continuation's
+out winders is evaluated (since the winder lists of the two threads
+are disjoint). Next, certain thread context variables are changed to
+reflect the execution of a new thread.  Then, the entire set of the
+new thread continuation's in winders is evaluated. Finally, the actual
+throw to the new thread continuation is performed.
+
+While evaluation during a context switch of all the winders of each
+thread appears to be reasonable, in practice this creates significant
+problems.  First, if the context switch is implicit and preemptive,
+executing the winders may not be what the user intended.
+
+Second, the Chez Scheme primitive {\sf critical-section} is
+implemented in terms of {\sf dynamic-wind}, and there are cases in
+which calling {\sf yield} from tail position within a {\sf
+critical-section} is useful.  In this case {\sf yield} will be invoked
+while a {\sf critical-section} is active. However, evaluating all of
+the current thread's out thunks temporarily cancels any active {\sf
+critical-section}.  If {\sf yield} does this before the current thread
+has been fully suspended (and there are several steps in the
+suspension process), it leaves the thread vulnerable to an interrupt
+and possibly an untimely context switch.
+
+While the problem with {\sf critical-section} alone could be overcome,
+there is a related problem: {\sf dynamic-wind} permits arbitrary user
+code to be run from a thread's winder list, as there is no restriction
+on what the in and out thunks may do.  It is conceivable that a
+program could call {\sf yield} in the context of:
+
+\begin{itemize}
+
+\item a call to {\sf dynamic-wind} in which an
+out thunk is declared that must be run with interrupts enabled (so
+that, e.g., garbage collection could occur as needed), and 
+
+\item a
+{\sf critical-section} form to prevent other threads from running until the
+current thread is fully suspended. 
+\end{itemize}
+
+Unfortunately, both criteria cannot be satisfied simultaneously.  To
+avoid problems of this kind we must place restrictions on the
+execution of winders during a thread context switch.  Two
+possibilities will be considered here.
+
+First, we could inhibit the execution of all winders during a thread
+context switch.  Winder execution would occur only on continuation
+throws performed by the user, and never on throws to thread
+continuations (which are never available to the user).  This is in
+fact the approach taken in the current version of the thread system.
+It is straightforward to implement, but has the undesirable property
+of preventing certain code that depends on the Chez Scheme special
+form {\sf fluid-let} from being reentrant, including certain parts of
+Chez Scheme itself.  For example, in the current version of the thread
+system, it is an error for more than one thread to use the Chez Scheme
+compiler concurrently, because of the reentrancy problem caused by the
+improper handling of {\sf fluid-let}.\footnote{It is probably also an
+error to invoke the compiler from an interrupt handler for essentially
+the same reason.  Control does not pass to an interrupt handler via a
+continuation throw, so no winder lists are evaluated.}
+
+Second, we could inhibit only the execution of user-defined winders
+during a thread context switch.  A user-defined winder is one that is
+declared by an explicit user program call to {\sf dynamic-wind}.  An
+implicit call to {\sf dynamic-wind}, e.g., by expansion of a {\sf
+critical-section} form, would not be inhibited.  This approach is
+slightly more complex to implement, but has the desirable property of
+preserving the correctness of the Chez Scheme {\sf fluid-let} form for
+multiple threads.  However, this approach is not feasible at present
+unless Chez Scheme is modified to support it.
+
+The Chez Scheme system-mode procedure \$current-winders is used by the
+thread system to obtain the list of winders associated with the
+current continuation, and to assign a new list of winders to the
+current continuation.
+
+%-** Data Structures and Procedures}
+
+\subsection{Data Structures and Procedures}
+
+Several essential thread system data stuctures and procedures are 
+introduced here.
+
+\subsubsection{Data Structures}
+\begin{description}
+
+\item[\sf tcb] the thread control block, created for each thread.
+Contains the thread continuation (except for the running thread),
+scheduling priority and time quantum, queue pointers (except for 
+the running thread), the thread's process, and other data.
+
+Enqueued threads contain pointers to two other {\sf tcb} objects ({\sf
+next} and {\sf previous}). Each queue contains an extra {\sf tcb}
+object, i.e., a ``dummy'' thread, which is created to serve as the
+queue header. The {\sf run} and {\sf sleep} queues are statically
+defined by the thread system, and various other queues (e.g., {\sf
+error} and {\sf completed}) are created by the system dynamically. All
+other queues are defined by the user.
+
+\item[\sf pcb] the process control block, created for each
+process, or group of related threads.  Contains the per-process
+parameters, process name, and other data.
+
+\item[\sf qcb] the queue control block, or queue header, created for each
+thread queue. Contains slots for holding message queue data, and other
+data.  
+
+\end{description}
+
+
+\subsubsection{Procedures}
+\begin{description}
+
+\item[\sf yield] suspends execution of the current thread by placing it on
+the run queue (or another queue if specified as an argument), and
+starts execution of another runnable thread.
+
+\item[\sf fork] accepts a thunk and creates a new runnable thread (see
+{\sf thunk$\rightarrow$tk}) in the current process, returning the new
+tcb.
+
+\item[\sf fork-process] accepts a thunk and creates a new runnable
+thread (see {\sf thunk$\rightarrow$tk}) and a new {\em process},
+returning the new tcb.  The new process inherits the parameters
+of the current process.  The essential difference between a thread and
+a process is that a process stores {\em threaded parameters}, not a
+thread.  (see {\em Threaded Parameters} below.)
+
+\item[\sf thunk$\rightarrow$tk] accepts a thunk and returns a new
+thread continuation.  When subsequently started by {\sf yield}, the
+thread continuation first evaluates the thunk, and then suspends its
+thread on a ``completed'' queue (from which it is never restarted).
+
+\item[\sf tbreak] accepts a thread and modifies its thread
+continuation to execute the thunk assigned to the threaded parameter
+{\sf interrupt-handler} before throwing to the continuation.  (see
+{\sf Threaded Parameters} below.) {\sf tbreak\/} is useful for
+defining the keyboard break action.
+
+\item[\sf clone-thread] accepts a thread and returns a new thread
+containing many of the same data as in the original.  {\sf
+clone-thread\/} is useful for capturing the state of a thread that has
+called error or tbreak.
+
+\item[\sf make-queue] accepts a name argument and returns a new queue
+object: a ``dummy'' thread tcb that contains a queue header object, or
+qcb.  Queues are used for several purposes: scheduling and suspension,
+and message passing and synchronization.
+
+\item[\sf enqueue] accepts a thread and a queue and places the thread
+on the queue.
+
+\item[\sf dequeue] accepts a non-empty queue (i.e., a tcb) and
+returns the first thread enqueued there.
+
+\end{description}
+
+
+
+%-** parameters 
+
+\subsection{Parameters}
+
+Chez Scheme provides access to certain toplevel system values through
+an interface called a {\em parameter}.  A parameter is a procedure of
+zero or one arguments.  If called with no argument, the parameter
+simply returns the underlying {\em parameter value}.  With one
+argument, the parameter first checks that the argument is of the
+appropriate type for the parameter.  If so, the parameter assigns the
+argument as the new parameter value, otherwise it signals an error.
+
+A number of standard Chez Scheme parameters determine properties of
+the system that may affect the execution of any continuation.
+Examples are {\sf current-output-port} and {\sf print-length}, which
+affect how program output is written.  Therefore we must consider how
+threads and parameters interact.
+
+Since each thread represents an independent computation, each thread
+may require its own parameter values during its execution. The thread
+system provides for this by redefining all system parameters whose
+values may vary from thread to thread.  We will call such
+redefinitions {\em threaded parameters}.
+
+A separate set of threaded parameters is stored in each thread's
+process control block.  Therefore, all of the threads of a process
+share one set of parameters. (In fact, this is the most significant
+distinction between threads and processes.)
+
+The current implementation of threaded parameters assumes that a
+parameter stores its value in a local variable.  While this is true
+for all Chez Scheme parameters that were originally defined using the
+system primitive {\sf make-parameter}, the specification of parameters
+does not require this.  In fact, the Chez Scheme parameters {\sf
+current-input-port} and {\sf current-output-port} assign global
+variables as a side-effect, and therefore these parameters must
+receive special handling within {\sf yield}.
+
+Certain parameters should not be associated with individual threads
+and therefore are not redefined.  An example of such a non-threaded
+parameter is {\sf collect-request-handler}. (See the appendix for more
+details.)
+
+The Chez Scheme special form {\sf parameterize} may be used with both
+regular and threaded parameters. However, since {\sf parameterize} is
+implemented in terms of {\sf dynamic-wind}, its side-effect will not be
+undone if the thread yields.  This is relevant only if (1) the
+parameter is non-threaded (hence global), or (2) the parameterizing
+thread yields to another thread of the same process, since otherwise
+the other thread will access a different set of per-process parameter
+values.
+
+
+%-** timer interrupts and thread scheduling
+
+\subsection{Timer Interrupts and Thread Scheduling}
+
+Thread continuations abstract multiple independent dynamic execution
+contexts but do not specify how control is exchanged between different
+contexts.  Threads may schedule themselves explicitly by calling {\sf
+yield}.  However, to provide for implicit (or preemptive) scheduling
+we must introduce an additional language construct.  Chez Scheme
+contains one such construct: the {\em timer}.  The thread system uses
+the timer to implement {\em timed preemption}.
+
+The Chez Scheme timer is a clock that counts steps, called {\em
+ticks}, of an running program and interrupts the program when the
+requested number of ticks have elapsed.  As a program is executed, one
+tick is subtracted from the timer clock for each countable program
+step. Not all program steps are counted by the system, however, and
+not all steps take an equal amount of real time. Also, the body of a
+{\sf critical-section} form is not charged for number of the ticks it
+consumes.  These facts affect the accuracy of real time scheduling
+decisions.
+
+When the timer count reaches zero, the system performs a {\em timer
+interrupt}. A timer interrupt is a forced, preemptive procedure call
+to the {\em timer interrupt handler}, an ordinary Scheme thunk.
+
+The user may enable, disable, and set the timer tick count with the
+primitive procedure {\sf set-timer}.  When called with no arguments,
+{\sf set-timer} returns the number of ticks left on the timer.  When
+called with a non-negative fixnum integer argument, {\sf set-timer}
+replaces the old tick value with the argument and returns the old tick
+value.
+
+The thread system manages the timer clock and the supplies the timer
+interrupt handler.  It is an error for the user to alter these
+objects.  Instead, the user may specify how a thread is to be
+scheduled by supplying a {\em time quantum\/} for the thread.  A time
+quantum is specified in units of {\em cpu time}, not ticks.  For
+example, at present the default quantum is ten milliseconds of cpu
+time, which means that the system will permit a thread to run without
+yielding for up to ten milliseconds of elapsed cpu time (as charged to
+the running Scheme task by the underlying operating system).
+
+A thread's time quantum is an approximation of the actual cpu time
+consumed.  Chez Scheme counts ticks, not time, so the thread system
+must determine the latter indirectly.  This fact may render the thread
+system unable to cope with severe real time scheduling constraints.
+
+The thread system sets a single, fixed tick value into the timer.
+When a timer interrupt is taken, the handler computes the amount of
+cpu time elapsed since the previous interrupt, all of which is charged
+to the currently running thread, and decides whether the current
+thread should be forced to yield.
+
+The accuracy of scheduling decisions varies inversely with the fixed
+timer tick value established by the system. This value is set to a
+default of 2000.  The default value was selected as a compromise
+between scheduling accuracy and the overhead imposed by calling the
+timer interrupt handler.  It is possible that another value may be
+more appropriate under certain circumstances.
+
+The thread system timer also provides a way for the user to perform
+high priority, ``foreground'' processing tasks by setting the {\em
+timer interrupt hook}, a Scheme thunk.  The thread system timer
+interrupt handler calls the hook once each timer interrupt.
+
+%-** keyboard interrupts
+
+\subsection{Keyboard Interrupts}
+
+The thread system has been designed for {\sc swl}, an interactive software
+development and execution evironment.  It is expected that from time
+to time the user will intervene to suspend or abort running
+computations.  The thread system adapts the Chez Scheme keyboard
+interrupt mechanism to work in a multi-threaded environment.
+
+When a Chez Scheme task is started by the operating system, a {\em
+console input port} object is allocated to it, which the thread system
+assumes is attached to a terminal keyboard.  If the operating system
+detects that the user has typed an {\em interrupt key sequence} at the
+keyboard, it will signal this fact to Chez Scheme.  Chez Scheme in
+turn signals the thread system by invoking the {\em keyboard interrupt
+handler}, a Scheme thunk.
+
+The thread system manages keyboard interrupts and supplies the
+keyboard interrupt handler.  It is an error for the user to alter this
+object.  When invoked, the keyboard interrupt handler signals a
+distinguished thread, the {\em console}, by calling {\sf tbreak} with
+the console as an argument. In addition, if a thread other than the
+console is executing, the handler also signals that thread by calling
+tbreak.
+
+When given a keyboard interrupt, a running console will enter the
+debugger.  Otherwise the console and running threads are simply reset.
+
+
+%-** garbage collection, collect-request-handler
+
+\subsection{Garbage Collection}
+
+Like the timer and keyboard interfaces, the Chez Scheme garbage
+collector is parameterized by a handler.  Each time a collection is
+required, the system calls the {\em collect request handler}, a Scheme
+thunk.  Unlike the timer and keyboard handlers, however, the collect
+request handler is not set by the thread system, so the user is free
+to supply one.
+
+Because collections may occur at almost any time (except within the
+body of a {\sf critical-section}), and because the user-specified collect
+request handler may execute arbitrary code, the thread system must
+consider the effects of invoking the handler.
+
+A crucial issue is that the collect request handler may cause a thread
+context switch.  This is most likely to be the case if the handler
+writes to a non-blocking output port (such ports typically cause one
+or more thread context switches on each operation).
+
+To avoid problems caused by thread context switches triggered by any
+interrupt handler, we design the {\sf yield} primitive to be {\em
+reentrant}, i.e., capable of being interrupted and invoked again by
+the interrupt handler.
+
+
+%-** thread synchronization
+
+\subsection{Message Passing and Synchronization}
+
+While some computations are ``single-threaded'' and may therefore be
+expressed as a single independent thread, other computations are best
+expressed as a group of mutually cooperating threads.  While
+cooperation between threads may be achieved without introducing new
+primitives, because threads may update shared variables to exchange
+information, and may busy-wait to synchronize their activities, these
+techniques are error-prone and inefficient.  As discussed above in the
+section on concurrency management, assignment of shared variables
+generally introduces a critical section, which may be overlooked by
+the user.  Furthermore, synchronization by busy-waiting wastes machine
+cycles; it is more efficient to suspend the waiting thread until the
+anticipated event occurs.
+
+To overcome these limitations we introduce primitives that permit
+a more abstract method of thread communication and synchronization
+known as {\em message passing}.  Under message passing a thread may
+forward data to another thread by {\em sending\/} a message to a
+shared message {\em queue}, and it may synchronize its execution with
+another thread by waiting to {\em receive\/} a message on a shared
+queue.  We now describe the two thread system message passing
+primitive procedures.
+
+\begin{description}
+
+\item[\sf send-msg] accepts a queue and a message (any Scheme object),
+then either (1) places the message on the queue if there is no waiting
+receiver thread, or (2) if a thread is waiting to receive a message,
+sends the datum to the receiver by returning the thread to the run
+queue with the message as the return value.
+
+\item[\sf receive-msg] accepts a message queue and either (1) removes and
+returns the next message from the queue if one is available, or (2)
+enqueues the current thread on the message queue, thus causing it to
+block until a message is available.
+
+\end{description}
+
+
+%-** breaking and resuming execution
+
+\subsection{Breaking and Resuming Execution}
+
+
+The keyboard interrupt, described earlier, is one mechanism for
+diverting the normal flow of control of a thread.  In this section we
+look more closely at the thread system constructs for managing such
+diversions.
+
+	tbreak primitive
+	error handling
+	server threads
+	breaking servers, the console
+
+%-** inspection and debugging
+
+\subsection{Inspecting and Debugging}
+	{\sf call/cc} vs. {\sf call/1cc}: can't inspect a shot continuation
+
+
+%-* System Performance
+
+\section{System Performance}
+
+\begin{verbatim}
+
+Environment: 200 MHz Pentium processor without secondary cache, Chez
+Scheme 5.9b, optimize-level 2, best of five runs.
+
+
+Benchmark code:
+
+(define (fact n) (if (zero? n) 1 (* n (fact (1- n)))))
+(define (loop c t) (if (zero? c) \#f (begin (t) (loop (1- c) t))))
+
+
+Benchmark timings:
+
+1. SWL 0.9l, no other running threads.
+
+(time (loop 10000 (lambda () (fact 100))))
+    34 collections
+    3570 ms elapsed cpu time, including 10 ms collecting
+    3561 ms elapsed real time, including 34 ms collecting
+    36726320 bytes allocated, including 36732752 bytes reclaimed
+
+
+2. SWL 0.9l, one additional running thread (which always yields 
+immediately).
+
+(time (loop 10000 (lambda () (fact 100))))
+    34 collections
+    3730 ms elapsed cpu time, including 40 ms collecting
+    3733 ms elapsed real time, including 49 ms collecting
+    37735272 bytes allocated, including 36855656 bytes reclaimed
+
+
+3. No SWL or threads.
+
+(time (loop 10000 (lambda () (fact 100))))
+    34 collections
+    3470 ms elapsed cpu time, including 10 ms collecting
+    3463 ms elapsed real time, including 24 ms collecting
+    36645432 bytes allocated, including 36841432 bytes reclaimed
+
+
+ratio 1:3 =  1.03
+ratio 2:3 =  1.07
+
+\end{verbatim}
+
+%-* Areas for Future Work
+
+\section{Areas for Future Work}
+
+%-** Desired Changes to Chez Scheme
+
+\section{Proposed Extensions for Support of Concurrency}
+
+This work has suggested several language implementation changes or
+extensions that would benefit the thread system.
+
+\begin{itemize}
+
+\item We have found that the Chez Scheme {\sf critical-section} form
+is rather expensive when used with extremely small critical sections,
+such as code to increment a shared integer variable.  An atomic
+read-increment-and-assign primitive, which could be used without an
+enclosing {\sf critical-section}, would be useful.
+
+\item Code that is protected by {\sf critical-section} is not charged
+for its execution by decrementing the timer tick counter.  This leads
+to scheduling inaccuracy whenever a large proportion of a thread's
+code executes within the body of a critical section.  We suggest that
+the body of a critical section should be charged for its execution.
+
+\item It would be useful to distinguish between the dynamic-wind
+procedure called by system code and in the expansions of system forms,
+and the dynamic-wind that is available to the user.  This would permit
+us to distinguish winders that are defined by system primitives and
+forms from user-defined winders.  In this case we could restore the
+full functionality of {\sf fluid-let}.
+
+
+\end{itemize}
+
+
+
+%-* Summary and Conclusion
+
+\section{Summary and Conclusion}
+
+
+
+
+%-* Acknowledgements
+
+\section{Acknowledgements}
+
+Carl Bruggeman implemented the first iterations of the thread system
+and devised many of the concepts presented here.  Oscar Waddell, chief
+architect of {\sc swl}, collaborated closely with Carl and the author.
+R. Kent Dybvig supervised the overall {\sc swl} project and is the author of
+Chez Scheme.
+
+
+%-* Bibliography
+
+\begin{thebibliography}{99}
+
+\bibitem{TSPL} R. Kent Dybvig. {\em The Scheme Programming Language},
+Second Edition, Prentice-Hall, Inc., Upper Saddle River, New Jersey,
+1996.
+
+\bibitem{CSSM} R. Kent Dybvig.  {\em Chez Scheme System Manual,
+Revision 2.4}.  Cadence Research Systems, Bloomington, Indiana. 1994.
+
+\bibitem{TCLTK} Ousterhout, J. {\em Tcl/Tk}, Sun Microsystems
+Laboratories.
+
+\end{thebibliography}
+
+
+
+
+\end{document}
+
+
+
+%-* Appendix: User's Guide
+
+\section{Appendix: User's Guide and Reference Manual}
+
+
+%-** Public Procedures
+
+\subsection{Public Procedures}
+
+thread-error-handler
+
+A procedure called by the error primitive in response to a thread
+execution error, which prints error data and thread-identifying
+information to the console output port.
+
+
+thread-timer-interrupt-hook
+
+A thunk that is called once for each interrupt taken by the Chez
+Scheme timer-interrupt.  Since the thread system triggers the
+timer-interrupt at a very high frequency, it is essential that the
+timer interrupt hook procedure be made as inexpensive as possible.
+
+
+thread-yield
+
+Forces the current thread to relinquish control to another runnable
+thread.  The current thread's scheduling priority is reset to the
+priority of its process (see thread-reschedule), and the thread is
+placed in the run-queue according to its (new) priority.
+
+The return value of thread-yield is used internally by the thread
+system (by the message queue primitives), and should be ignored by
+user code.
+
+
+thread-sleep-check
+
+thread-become-console!
+
+thread-become-server!
+
+thread-kill
+
+thread-trav-run-queue
+
+thread-quantum-remaining
+
+thread-fork-process
+
+thread-fork
+
+thread-sleep
+
+thread-reschedule
+
+thread-make-msg-queue
+
+thread-send-msg
+
+thread-receive-msg
+
+thread-msg-waiting?
+
+thread-receiver-waiting?
+
+thread->k
+
+thread-find
+
+thread-self
+
+thread-number
+
+thread-make-parameter
+
+thread-debug
+
+thread-break
+
+ps
+
+ps-all
+
+ps-num
+
+pps
+
+
+%-** Syntax
+
+\subsection{Syntax}
+
+disable-timed-preemption
+enable-timed-preemption
+
+
+%-** Major Data Structures
+
+\subsection{Data Structures}
+
+The following data structures are defined using the Chez Scheme
+{\sf define-structure} form.
+
+A {\sf tcb}, or thread control block, is allocated for each thread.
+Each tcb contains the following fields:
+
+\begin{description}
+
+\item[\sf num]	a unique integer identifier.
+
+\item[\sf pri]	a integer, used to order running threads.
+
+\item[\sf tk]	the thread continuation for suspended threads; undefined
+		if the thread is running.
+
+\item[\sf quantum]	the length of time in milliseconds the thread is
+	permitted to run without preemption.
+
+\item[\sf sleep] the length of time in milliseconds the thread is
+to sleep; undefined if the thread is not sleeping.
+
+\item[\sf pcb]		the thread's process control block.
+
+\item[\sf next]		the next thread in the queue if the thread
+is enqueued, else \#f.
+
+\item[\sf prev]		the next thread in the queue if the thread
+is enqueued, else \#f.
+
+\item[\sf tpc]		the timed preemption counter (currently unused).
+
+\item[\sf sic]		the system interrupt counter.
+
+\item[\sf starts]	the number of times the thread has been started.
+
+\item[\sf winders]	the thread's winder list; undefined if the 
+thread is running.
+
+\end{description}
+
+A {\sf pcb}, or process control block, is allocated for each process, or
+group of threads.  Each {\sf pcb} contains the following fields:
+
+\begin{description}
+
+\item[\sf tpri]
+\item[\sf params]
+\item[\sf threads]
+\item[\sf shot?]
+\item[\sf name]
+
+\end{description}
+
+
+A {\sf qcb}, or queue control block, is allocated for each queue.  Each
+{\sf qcb} contains the following fields:
+
+\begin{description}
+
+\item[\sf info]
+\item[\sf data]
+\item[\sf rdata]
+\item[\sf sends]
+
+\end{description}
+
+
+
+
+%-** Global Variables
+
+
+
+thread-run-queue-idle?
+
+\#t if one or more threads are ready to run, \#f otherwise.
+
+thread-sleep-queue-idle?
+
+\#t is one or more threads are sleeping, i.e., blocked on the 
+sleep queue, \#f otherwise.
+
+
+thread-conout
+
+The original Chez Scheme console output port, a blocking port.
+
+
+
+thread-highest-priority
+
+A fixnum value that denotes the highest priority at which a thread
+may be scheduled to run. (Larger numbers represent lower priorities.)
+
+
+thread-lowest-priority
+
+A fixnum value that denotes the lowest priority at which a thread may
+be scheduled to run. (Larger numbers represent lower priorities.)
+
+
+
+
+%-** Redefinitions of standard Chez Scheme Procedures
+
+error
+
+reset
+
+new-cafe
+
+
+
+%-** Global Parameters
+
+thread-default-quantum
+
+thread-default-ticks
+
+
+
+%-** Thread-specific Parameters
+
+last-error
+
+cafe-level
+
+interrupt-handler
+
+process-server
+
+process-name
+
+thread-quantum
+
+
+%-** effects on standard language constructs
+	{\sf call/cc}, {\sf dynamic-wind}, {\sf fluid-let}, 
+	{\sf parameterize}
+
+%-** dependencies on Chez Scheme internals
+
+
+
+	\$current-winders
+	\$current-stack-link
+	\$null-continuation
+	\#scheme-version
+	\#interrupt-flags
+	subset-mode 
+
+
+
+

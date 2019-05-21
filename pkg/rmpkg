@@ -1,0 +1,11 @@
+#! /bin/csh -f
+if ( $#argv != 1) then
+  echo "Usage: $0 release"
+  echo "  e.g.,: $0 1.3"
+  exit 1
+endif
+
+set R = $1
+
+/bin/rm -rf /usr/bin/swl /usr/lib/swl$R /Applications/swl.app
+pkgutil --forget com.scheme.swl

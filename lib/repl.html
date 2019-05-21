@@ -1,0 +1,124 @@
+<html>
+<head>
+<title>Help for REPL</title>
+</head>
+<body>
+
+<h1>REPL Help</h1>
+
+Use the read-eval-print-loop, or REPL, to evaluate Scheme expressions
+interactively.  The system displays a prompt, typically "&gt;", and awaits
+your input.  Type a Scheme expression and submit it to the evaluator by
+pressing the Enter key.
+The REPL computes and prints the value of the expression, then waits for
+another expression.  By default, expressions are colored blue once submitted
+to the evaluator; results are printed in black.
+<p>
+<h3>Common Key Bindings</h3>
+The REPL and the Editor share a set of
+<a href="keys.html">common key bindings</a>
+for cursor movement and editing.  These bindings are described on
+a separate page.
+<p>
+
+<h3>History</h3>
+The REPL keeps a temporary history of the expressions you enter.
+Using the keys listed below you can navigate through
+the history to recall expressions in order to edit or re-evaluate them.
+To avoid confusion, history movement is disabled when you begin typing
+an expression and is enabled again when the new prompt is displayed.
+The expression history is discarded when you close the REPL, but you
+can save the current history to a file or load a
+previously saved history via the File--&gt;History menu.
+<p>
+<table><tr><th align=left>Keys</th>
+           <th align=left>Action</th></tr>
+<tr></tr>
+<tr> <td>Up</td><td>Previous history item</td> </tr>
+<tr> <td>Ctrl+p</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr> <td>Esc p</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>Down</td><td>Next history item</td> </tr>
+<tr> <td>Ctrl+n</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr> <td>Esc n</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+</table>
+
+<h3>History search</h3>
+To search through the history, type the first few characters of the
+desired expression and press Esc and then p, to search through previous
+history items, or Esc followed by n, to search through following history
+items.
+When a match is found, pressing Esc p or Esc n again continues the search.
+<p>
+Esc p and Esc n search for expressions that start with the text you enter.
+To find matches that contain the search text anywhere, not just at the start
+of the expression, use Esc P and Esc N instead.
+<p>
+When you find the desired expression, you can edit it as usual.
+Any edit terminates the history search.
+If the cursor is at the end of the expression, pressing the Enter
+key submits the expression for evaluation.
+If the cursor is not at the end of the expression,
+pressing the Enter key opens a new line.
+To enter an expression immediately, without moving to the end of the
+expression, press Ctrl+J or Ctrl+Enter.
+<p>
+
+<h3>Controlling evaluation</h3>
+
+If the REPL is taking too long to evaluate some expression,
+you can interrupt the computation by typing Ctrl+c
+(hold down Control and then press c) or by using the
+Control--&gt;Interrupt menu item.
+When the computation is interrupted, you will typically be given
+a "debug&gt;" prompt.
+Enter "q" to exit the debugger and discard the computation,
+"i" to inspect the continuation, or "e" to exit the debugger and
+resume the computation.
+Enter "?" for help at the "debug&gt;" prompt for a list of other options.
+<p>
+
+<h3>Controlling the environment</h3>
+
+Before testing your programs it is often helpful to first clean the
+environment.  Cleaning the environment discards any definitions you may
+have entered in the REPL or loaded from files, leaving the system in a
+pristine state as if SWL had just been started afresh.
+This lets you verify that your file contains all the definitions
+needed by your program.  If your program works before cleaning the
+environment, but fails afterward with
+error messages complaining of unbound variables, there is a good
+chance that a definition missing from the file was entered in the
+REPL rather than the Editor.  The missing definition can probably
+be found by navigating the REPL's expression history.
+<p>
+To clean the environment select "Clean environment..." from the REPL's
+Control menu.
+This will enter and evaluate the expression <tt>(clean-environment)</tt>
+in the REPL, where it can be recalled more quickly from the keyboard
+using the history search mechanism.
+<p>
+By default, all REPLs share a common global environment and this
+environment is reset by <tt>clean-environment</tt>.
+This means that, by default, any definitions in any REPL are lost 
+when you clean the environment.
+If you instead enter and evaluate <tt>(clean-environment 'own)</tt>
+into a REPL, that REPL will use a clean private environment that is
+not affected by cleaning the shared environment of other REPLs.
+To make this REPL revert back to the shared environment, simply use
+<tt>(clean-environment)</tt>, without the optional <tt>own</tt> argument.
+<p>
+
+
+<h3>Key Bindings Specific to the REPL</h3>
+<table><tr><th>Key</th><th>Action</th></tr>
+<tr> <td>Esc Ctrl+a</td><td>Move cursor to beginning of expression</td> </tr>
+<tr> <td>Alt+&lt;</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+<tr> <td>Esc Ctrl+e</td><td>Move cursor to end of expression</td> </tr>
+<tr> <td>Alt+&gt;</td><td>&nbsp;&nbsp;&nbsp;"</td> </tr>
+<tr></tr>
+</table>
+
+</body>
+</html>

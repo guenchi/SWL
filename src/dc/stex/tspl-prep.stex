@@ -1,0 +1,18 @@
+\xdef\entryheader{%
+ \xedef\entrylab{\genlab}\raw{\entryheader}\label{\entrylab}}
+
+\xdef\noskipentryheader{%
+ \xedef\entrylab{\genlab}\raw{\noskipentryheader}\label{\entrylab}}
+
+% \formdef{primitive name}{type}{form}
+\xdef\formdef#1#2#3{\xformdef{#1}{\scheme{#1}}{#2}{#3}}
+
+% \xformdef{sort key}{index entry}{type}{form}
+\xdef\xformdef#1#2#3#4{%
+ \hindex{\entrylab}{#2|emph}%
+ \raw{\formdef}{#3}{\scheme{#4}}%
+ \formsummary{#1}{#3}{\scheme{#4}}{\entrylab}}
+
+\xdef\suppress\formdef#1#2#3{% index entry, type, form
+ \hindex{\entrylab}{\scheme{#1}|emph}%
+ \formsummary{#1}{#2}{\scheme{#3}}{\entrylab}}

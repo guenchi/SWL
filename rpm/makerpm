@@ -1,0 +1,55 @@
+#!/bin/sh -f
+
+# su doesn't appear to modify USER but sudo does, but sudo provides SUDO_USER.
+SELF=${SUDO_USER:-$USER}
+if [ "$SELF" == "root" ]; then
+   echo "makerpm expects to be run via su or sudo"
+   exit 1
+fi
+
+RPMDIR=${RPMDIR:-${PWD}}
+
+if [ $# != 3 ]
+then
+    echo "Usage: $0 <scheme version> <swl version> <release>"
+    echo "  e.g.: makerpm 8.1 1.2 1"
+    exit 1
+fi
+
+if [ `id -u` != 0 ]; then
+    echo "makerpm must be run as root (via su)"
+    exit 1
+fi
+
+# set P to product, V to version, and R to release
+P=SWL
+SCHEMEVERSION=$1
+V=$2
+R=$3
+
+# set SPEC to spec file name
+SPEC=${RPMDIR}/$P-$V-$R.spec
+
+# create spec file
+sed -e "s/{VERSION}/$V/g" \
+    -e "s/{RELEASE}/$R/g"  \
+    -e "s/{SCHEMEVERSION}/${SCHEMEVERSION}/g" $P.template > $SPEC
+
+# create rpm file
+setarch i386 rpmbuild \
+    --target i386 \
+    --buildroot ${RPMDIR}/tmp \
+    --define "_topdir ${RPMDIR}" \
+    --define "_srcrpmdir ${RPMDIR}" \
+    --define "_rpmdir ${RPMDIR}" \
+    --define "_sourcedir ${RPMDIR}" \
+    --define "_builddir ${RPMDIR}" \
+    --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm" \
+    --define "debug_package %{nil}" \
+    --quiet -ba ${SPEC}
+
+# clean up
+/bin/rm -rf ${RPMDIR}/tmp
+/bin/rm -rf ${RPMDIR}/swl$V
+/bin/rm -f $SPEC
+chown -R $SELF.chez ${RPMDIR}

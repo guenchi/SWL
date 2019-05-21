@@ -1,0 +1,156 @@
+\iflatex
+% These things should be passed through to LaTeX with their arguments
+% processed.
+\def\chapter{\raw{\chapter}}
+\def\cite{\raw{\cite}}
+\def\emph{\raw{\emph}}
+\def\epsfbox{\raw{\epsfbox}}
+\def\label{\raw{\label}}
+\def\pageref{\raw{\pageref}}
+\def\parheader{\raw{\parheader}}
+\def\protect{\raw{\protect}}
+\def\ref{\raw{\ref}}
+\def\section{\raw{\section}}
+\def\strong{\raw{\strong}}
+%\def\tolerance{\raw{\tolerance}}
+%\def\makeindex{\raw{\makeindex}}
+%\def\frontmatter{\raw{\frontmatter}}
+%\def\tableofcontents{\raw{\tableofcontents}}
+\fi
+
+\ifhtml
+%%%% standard built-in stuff
+\def\emph#1{\raw{<em>}#1\raw{</em>}}
+\def\parheader#1{\strong{#1}}
+\def\protect{}
+\def\strong#1{\raw{<strong>}#1\raw{</strong>}}
+\def\bigskip{\raw{<p>}}
+\def\medskip{\raw{<p>}}
+\def\smallskip{\raw{<p>}}
+\def\noindent{}
+\def\_{\raw{_}}
+\def\par{\raw{<p>}}
+\def\\{\raw{<br>}}
+\def\ {\raw{ }}
+\def\dots{\raw{...}}
+\def\vdots{\raw{<br>}\vdots\raw{<br>}}
+\def\itemvdots{\raw{<p>}\vdots\raw{<p>}}
+
+%%% environments
+\newenvironment{flushleft}{}{}
+
+%%% bibtex support
+\def\newblock{}
+
+%%%% BOOK stuff
+%%% inserting html tags and links
+\def\htmltag#1#2{\raw{<a name="}#1\raw{">}#2\raw{</a>}}
+\def\htmllink#1#2{\raw{<a href="}#1\raw{">}#2\raw{</a>}}
+
+%%% \frontmatter, \mainmatter, \backmatter
+\newif\ifmainmatter \mainmattertrue
+\def\frontmatter{\mainmatterfalse}
+\def\mainmatter{\mainmattertrue}
+\def\backmatter{\mainmatterfalse}
+
+%%% \chapter
+\newcounter{chapter}
+\def\chapter#1{
+\endchapter
+\openhtmlfile{#1}
+\newlabeltag
+\ifmainmatter
+\stepcounter{chapter}
+\raw{<h1>}Chapter \thechapter. \htmltag{\labeltag}{#1}\raw{</h1>}
+\begin{divertoutput}[0]
+\raw{<li>}\strong{\htmllink{\currentoutputfile##\labeltag}{Chapter \thechapter. #1}}
+\raw{<ul>}
+\end{divertoutput}
+\def\endchapter{\begin{divertoutput}[0]
+\raw{</ul><p>}
+\end{divertoutput}
+\copyrightnotice
+\closehtmlfile}
+\else
+\raw{<h1>}\htmltag{\labeltag}{#1}\raw{</h1>}
+\begin{divertoutput}[0]
+\raw{<li>}\strong{\htmllink{\currentfile\raw{##}\labeltag}{#1}}\raw{<p>}
+\end{divertoutput}
+\fi
+}
+\def\endchapter{}
+\def\copyrightnotice{}
+
+
+%%% \section
+\newcounter{section}[chapter]
+\def\section#1{
+\newlabeltag
+\stepcounter{section}
+\raw{<h3>}Section \thechapter.\thesection. \htmltag{\labeltag}{#1}\raw{</h3>}
+\begin{divertoutput}[0]
+\raw{<li>}\strong{\htmllink{\currentfile##\labeltag}{Section \thechapter.\thesection. #1}}
+\end{divertoutput}
+}
+
+%%% \subsection
+\newcounter{subsection}[section]
+\def\subsection#1{
+\newlabeltag
+\stepcounter{subsection}
+\raw{<h4>}Subsection \thechapter.\thesection.\thesubsection. \htmltag{\labeltag}{#1}\raw{</h4>}
+}
+
+%%% \exercise
+\newcounter{exercise}[section]
+\def\exercise#1{
+\newlabeltag
+\stepcounter{exercise}
+\raw{<h4>}\htmltag{\labeltag}{Exercise \thechapter.\thesection.\theexercise}\raw{</h4>}
+}
+
+%%% table of contents
+\newenvironment{contents}
+  {\raw{<h1>Table of Contents</h1>}\raw{<ul>}}
+  {\raw{</ul>}}
+
+%%% index
+\def\see#1#2{\emph{see} #1}
+\newenvironment{theindex}
+  {\begingroup\def\indexitemindent{<tt>&nbsp;&nbsp;&nbsp;</tt>}
+   \def\indexitem{<br>}
+   \def\subindexitem{<br>\indexitemindent}
+   \def\subsubindexitem{<br>\indexitemindent\indexitemindent}}
+  {\endgroup}
+
+%%%% TSPL/CSSM specific
+\def\longcode{}
+\def\noskip{}
+\def\ChezScheme{\emph{Chez Scheme}} % really want slant font
+\def\returns{\\\strong{returns: }}
+\def\copyrightnotice{
+\raw{<hr>}
+\begin{flushleft}
+R. Kent Dybvig\\
+\emph{The Chez Scheme System Manual, Revision 3}\\
+\copyright~1998 Cadence Research Systems\\
+\raw{<a href="canned/about.html">about this book</a>}
+\end{flushleft}
+}
+\def\copyright{&copy;}
+
+%%% grammar support
+\newenvironment{grammar}
+  {\begingroup\def\orbar{\raw{|}}\def\longis{$\longrightarrow$}}
+  {\endgroup}
+\def\bar{\raw{|}}
+\def\kplus{\raw{<sup>+</sup>}}
+\def\kstar{\raw{*}}
+\def\ang#1{\raw{&lt;}#1\raw{&gt;}}
+
+\def\entryheader{\par}
+\def\noskipentryheader{\par}
+\def\endnoskipentryheader{\par}
+\def\endentryheader{\par}
+
+\fi

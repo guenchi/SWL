@@ -1,0 +1,9 @@
+#!/bin/sh
+TCL_LIBRARY=/Library/Frameworks/Tcl.framework/Resources/Scripts/
+TK_LIBRARY=/Library/Frameworks/Tk.framework/Resources/Scripts/
+SWL_ROOT=/Users/chez/release/csv8.4/tmp/ppcosx/swl1.3/lib
+SWL_LIBRARY=/Users/chez/release/csv8.4/tmp/ppcosx/swl1.3/lib/ppcosx
+export TCL_LIBRARY; export TK_LIBRARY; export SWL_LIBRARY; export SWL_ROOT
+SCHEMEHEAPDIRS=/Users/chez/release/csv8.4/boot/%m
+export SCHEMEHEAPDIRS
+exec /Users/chez/release/csv8.4/bin/ppcosx/scheme -b /Users/chez/release/csv8.4/tmp/ppcosx/swl1.3/lib/ppcosx/swl.boot $@

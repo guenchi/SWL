@@ -1,0 +1,19 @@
+(include "../../config.scheme") ; get Scheme compilation flags
+(generate-inspector-information #f)
+(optimize-level 2)
+(define-syntax load
+  (lambda (x)
+    (syntax-case x ()
+      [(_ x . rest)
+       (let ((filename (syntax-object->datum (syntax x))))
+         (printf "including ~s~n" filename)
+         (syntax (include x)))])))
+(define-syntax require
+  (lambda (x)
+    (syntax-case x ()
+      [(_ x . rest)
+       (let ((filename (syntax-object->datum (syntax x))))
+         (printf "including ~s~n" filename)
+         (syntax (include x)))])))
+(compile-file "edit.ss" "edit.so")
+(exit)

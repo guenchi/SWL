@@ -1,0 +1,2506 @@
+* Make controls more Mac-like (or include an option to do so, or include some
+  way to rebind keys)
+
+* investigate network slowdown in SDL-based worms game when using SWL network
+  code instead of SDL's network code
+
+* Fix bug in the "SWL Notification" dialog
+   - seems to complain if you try to destroy it (which pops up another one)
+
+* toplevel's aspect-ratio support is reportedly broken on Windows (Tk bug)
+   - sent quick-hack workaround off to Jim Marshall (see .mail/lists/swl)
+
+* use putenv to set up the environment variables instead of a shell script
+   - need malloc and strncpy
+
+* better fix for Mac would be to use normal /usr/bin/swl script
+  (i.e. without the open -a /Applications/swl.app stuff) and have the
+  swl startup routine do the open -a stuff if it finds there is no swl
+  server running
+
+(define-syntax trace-define-class
+  (syntax-rules ()
+    [(_ (<name> . args) base
+        (ivars iv ...)
+        (inherited ih ...)
+        (inheritable ihtbl ...)
+        (private [pname pfml . pbody] ...)
+        (protected [protname protfml . protbody] ...)
+        (public [pubname pubfml . pubbody] ...))
+     (define-class (<name> . args) base
+       (ivars (dummy (printf "creating instance of ~s\n" '<name>)) iv ...)
+       (inherited ih ...)
+       (inheritable ihtbl ...)
+       (private
+         [pname pfml (trace-method <name> pname pfml pbody)] ...)
+       (protected
+         [protname protfml
+          (trace-method <name> protname protfml protbody)] ...)
+       (public
+         [pubname pubfml
+          (trace-method <name> pubname pubfml pubbody)] ...))]))
+(define-syntax trace-method
+  (syntax-rules ()
+    [(_ cname mname mfmls mbody)
+     (begin
+       (parameterize ([print-length 5] [print-level 2])
+         (printf "calling ~s's ~s method with ~s\n" 'cname 'mname (list . mfmls)))
+       (let-values ([x (begin . mbody)])
+         (parameterize ([print-length 5] [print-level 2])
+           (printf "returning ~s from ~s's ~s method\n" (if (= (length x) 1) (car x) x) 'cname 'mname))
+         (apply values x)))]))
+
+come up with some easy way to get all the swl stuff imported:
+
+(import swl:eventloop)
+(import swl:foreign)
+(import swl:generics)
+(import swl:macros)
+(import swl:module-setup)
+(import swl:oop)
+(import swl:option)
+(import swl:threads)
+
+(cd "apps/repl")
+(optimize-level 2)
+(generate-inspector-information #f)
+(compile-file "repl-text")
+(compile-file "repl")
+
+
+> I noticed that if there is a TAB character (ASCII 9) in the beginning of a
+> line (after editing in some other editor) then the SWL editor does not
+> indent the line after pressing the TAB key. Was it intentionally done so?
+
+* modify build process so that we can simply visit previously compiled .so
+  files if they're up to date
+
+> Enable Home, End, PgUp, PgDn and Shift-arrows keys on the numeric keypad
+> on Suns;
+> 
+> Make PgUp and PgDn keys actually move the cursor making sure that PgDn
+> followed by PgUp leaves the cursor on the same place (this is not the case
+> in Emacs by default);
+> 
+> Make M-p or up arrow scroll the REPL window to show the whole command if
+> it consists of several lines.
+> 
+> Thank you,
+> Yevgeniy
+
+- Fix bug: hitting control-g twice screws up minibuffer.
+- Add feature: Move by word
+- Add binding: shift-delete control-insert (whatever windows uses for cut/paste)
+
+? Figure out why swl fails to start when build with something other than
+  Chez Scheme version 6.9b.  Using plain 6.9 it panics on startup with an
+  error in thread-become-server!.  We probably need scheme-version-case in
+  a few more places (probably related to interaction-environment).
+
+x modify undo so that it recognizes when we undo/redo to the point of the
+  last file save (perhaps we just store the record at the car of the undo
+  list when we save the file and compare them using eq? to determine when
+  we've gotten back to the last saved state)
+
+x note that "the box" is incompatible with the undo mechanism at present
+   x let's disable it for now
+   ? seems that now that we're relative to begin-exp it should work, but
+     there's still some issue and it's not worth the time
+x fixed:
+   x editor's modified flag not updated properly by app-text's method
+   x open two repls, and do
+       (let f () (read) (f))  in one
+     and
+       (let f () (write 'x) (f))  in the other
+     after first expression is entered, it seems to hang in this version
+     but not in earlier versions --- problem was that we were logging delete's
+     that clear out the excess lines, so the undo history was growing like mad
+x move s-expression and undo stuff to scheme-text or app-text, and provide
+  way to control the undo history so we can avoid extending it in console.ss
+  and so we can limit it to the current expression in the repl
+
+Bug carried over from earlier version:
+ - (read (console-input-port)) or similar stuff when interacting with the
+   debugger doesn't work right w/ paren balancing etc because we're feeding
+   input to the reader line by line and have no way to undo it --- they'd have
+   to go in through the repl-read interface instead (too bad there's not a read
+   method for generic ports)
+
+? Add a pretty-print button that reformats their code 
+   - comments?
+   - could just iterate through set of lines and run raw-indent-current-line
+
+* input markup applied to output that is interleaved w/ input
+   * add a (with-prompt str expr ...) that handles the prompt stuff
+
+* add parameter for toggling 7bit vs. 8bit clean cut and paste.
+   this is to deal w/ browsers that treat &nbsp; as #xA0
+- add a --new or --solo option that bypasses the server stuff
+- instead of SWL_PREFS_DIR let them name the SWLPREFS file
+- server stuff should verify that the two versions of Scheme match
+   - maybe we can get the unique-id stashed away in the exec file,
+     but seems we need one for the Scheme side as well
+   - should also check to see whether we're running on the same display
+     (maybe it should print a message saying what's up in this case,
+      e.g. `refusing to connect to existing swl server on display ...')
+      - might be nice to have an option for connecting to the existing display
+      - can we just supply a --display option? or does Tk not handle that?
+        (or, should I say, our packaging of Tk)
+
+- perhaps repl's save/load history should just dump/read S-expressions
+  - then we can lose a fair bit of code
+
+* repl
+   - integration w/ editor via proxy procedure
+      - save-and-execute is broken since it has a call to load in the
+        callback thread
+   * insert-expression and set-current-expression! are broken when the
+     repl thread is evaluating stuff --- can't block on a mutex either
+     since they'd hang the event-queue thread.
+      - currently just disabling while repl thread is busy running
+        eventually need to fix this for sake of things like save-and-execute
+
+* fix raise performance bug
+   ? seems ok on Windows, test to confirm
+   - on Unix machines, bind the <Visibility> event and raise only when
+     the thing is partially or full obstructed (raise when obscured is fast,
+     but second raise is very slow)
+   - could implement a stay on top queue that we add widgets to (as in the
+     warning-dialog.ss code) and use the <Visibility> event to know when
+     we need to raise the intended "top" guy, currently just forking a thread
+
+* hide and protect from gc the various callback procs in init.ss and canvas.ss
+
+? add a .swlprefs entry and user interface for setting source directories?
+   - perhaps better to simply provide an interface for editing the
+     on-startup code (but they can't change what they don't know about)
+
+* make warning dialog into application (if it isn't already) so that
+  swl won't exit if there is a dialog up unless we ask to exit swl
+   ? hide warning dialog by putting it into normal swl module along
+     with swl:font-dialog etc.  also rename it? (coedit)
+
+? provide option for disabling the server mode?
+   - Kent had wanted us not to read the .swlprefs on startup in client mode
+
+? hide error-handler-continuation as an export of thread.ss
+   - quick attempt failed grandly on startup
+
+* get console.ss changes the delay auto raise of console window
+* think about separating the console.ss code so that there is
+  a single thread that fields requests for interaction w/ the
+  actual port / widget internals  (this may tank performance)
+  (if so, we may need to introduce proxy ports that do local
+   buffering before writing to the actual shared output window
+   port) --> the queue might go where we currently have the code
+             that calls show-window and interacts with the text widget
+             the rest of it we can probably make internal to the port
+             (ie. the double-buffering code)
+- should move the init code into server.ss or some such
+
+? we could modify editor so that it opens in read-only mode if it can't
+  create the backup file
+
+x remove make-sem that is visible at top-level
+x flush porthack.ss now that we're using 'truncate
+=-========-========-========-========-========-========-=======
+
+- fix semaphore code in console.ss
+ ? running .swlprefs in current directory first and having on-startup
+   is a potential security hole -- maybe on unix we could check that
+   file is owned by user and has no group or other write permissions
+ * eliminate html viewer or package as module
+ ? is there any way to change the default icon used to identify all the
+   SWL windows (right now it's an ugly red script Tk that looks like it
+   says 7k)
+ ? why is courier showing up as not available???  (new courier works, btw)
+    *** write some code that goes through and searches for fixed-width fonts
+        instead of using (only) the built-in list of known fixed fonts
+        (maybe use known-fixed as a cache)
+ - try again to eliminate visible top-level bindings
+ *** fix the home-directory code in preferences.ss for i3nt
+      --> for version we ship to UITS, we need to be pulling an
+          expression out of the registry that we can eval to get the
+          users home dir, so for UITS it should be something like:
+           (string-append "//cfs.indiana.edu/" (getenv "USERNAME") "/SWL0.9v")
+ x add SWL menu to the interaction window
+    maybe nicer to scrap the SWL menu and add Repl to everyone's file menu
+     --> adding SWL menu is easier, sigh...
+ ? add hook for loading patches
+    x sort-of ... they can add it as an on-startup in their .swlprefs
+ * scan this entire list before proceding
+ - audit uses of swl:begin-application
+ - need to test the focus on input raise on input raise on output settings
+   under windows (and on linux under some other window manager) to see if
+   they do the right thing
+ - test the font dialog stuff on windows --- how slow is it?
+    - may need background font cache thing
+      (or just load font info first time and save it)
+      maybe only start the process if there is somewhere to save the data
+       - add a preference to enable/disable this
+ * incorporate syntax.ss changes (any others?) from ../new-console workarea
+ x fixed stupid Alt+s keybinding conflict (SWL menu and file save)
+ - put global console in as default
+    x get it in as is
+    x add something to show that it's awaiting input (maybe change the title?)
+    - then add the EOF menu stuff
+    - then set up pretty font / color preferences
+    - test preference saving for the new toggles in the interaction window
+    * fix the flush-output-port handler so that it does a true flush
+       - we can't have it screwing around w/ thread delay stuff when folks
+         are counting on flush to make display consistent
+    * fix mutex bugs that are preventing it from printing in the first place
+       - if we enable mutex code, fire up repl, and try to print, it hangs
+       - input seems to work ok, however
+?>  * can we work around some synchronization bugs using on-error ?
+    * fix preferences for "auto-focus for input"
+       - start two repls and do this in one
+          (define foo
+            (lambda (n)
+              (if (zero? n)
+                  '()
+                  (let ([x (begin (printf "Enter item ~s> ") (read))])
+                    (cons x (foo (- n 1)))))))
+       - now run (foo 5) in repl 1
+       - enter the first item
+       - kill repl 1 ---- the repl thread that was waiting on the message queue
+         dies and no one asks for any more input
+       * actually, this seems ok, since we can still read from repl 2 and
+         get the right thing...
+          ---> what might be nice is if there were some way to point out
+               to the user that the repl they just killed was busy doing
+               something
+    - after updating preferences code, come back and make port bulletproof
+      [lower priority since students aren't going to be making threads much]
+    * strip out debugging printfs in the console code
+ - revisit the teventloop application-modal issues
+ - icing on cake: user preferences for color in repl (or do later)
+ - important data point: doing read-char was dog slow on file opened as:
+     (define ip (open-input-file "//cfs.indiana.edu/owaddell/share/swl.boot"))
+   but block-read with a huge buffer ran like a bat out of hell
+    - may be useful to write code that can load boot file over network quickly
+      and include this in the stuff that we have UITS install
+       - but this probably isn't very much code anyway ...
+ - may want to give ourselves a way to hook things automatically --- e.g.
+   automatically load a patch from a file in their home $HOME/SWL directory
+ - ask Kent to change the default current directory so that it's not tutorials
+    - esp. important later for the home users
+ - future patches may be smaller if we drop the macros for classes and stuff
+-----------------------
+ x move all the cool fun code off into a separate entry point
+    - e.g. move the init.ss code that modifies source-error-handler, etc.
+      into a separate entry point  swl:starup-customization
+      that we can overwrite via patch and yet still have run at the right
+      time during the swl:startup process
+       - perhaps a set of entry points for the various things
+         we might want to hook:
+           swl:startup-before-install-threads
+           swl:startup-before-repl
+    - perhaps with a specific gensym name (or exported by swl:module-setup)
+      that we can load and patch against
+
+* persistant color prefs for all of SWL
+   - should affect minibuffer too (maybe even warning dialogs?)
+
+* things to fix that were printf reminders in the code:
+   * update <scheme-text> show-sexpression-at method
+      ? do we have csv6.9 w/ read patch pushed through?
+      * also change source-*-handler code in init.ss that calls the
+        old error handler with the OLD source info format
+   * be sure to clear mini-buffer of the error message when there are
+     modifications (maybe this is only an issue in the code that runs
+     when read.patch is not loaded)
+   - redirect current-input-port / current-output-port in repl-text.ss
+     [currently set to console (ie. repl-port)]
+      - do this very early (maybe before installing thread params)
+   * when multiple warnings while loading changed file we get a dialog
+     box for each one (can be tedious to dismiss them all)
+       - test loading s3.ss in $t/assignments
+       - wouldn't let me close the stupid window either
+       - then it wouldn't let me load the damn file!
+          - looks like source-warning-handler was getting stuck looking
+            editor while trying to give cool check warning
+          - also the SWL menu died --- maybe the background console thread
+            (or its fallback queue) is dead
+          - interesting: several people blocked on semaphore named semaphore
+            (guess we really will have to use dynamic-wind for those)
+             --> also update console.ss to use dynamic-wind for its sems?
+             --> rats, we can also get the whole system to deadlock by getting
+                 the last remaining fallback thread to block on the semaphore
+****      * looks like this may have been a fallback "save and execute" thread
+            trying to evaluate an unbound variable reference
+             - may have been important that there had been source warnings
+               for that file
+             ? maybe these guys were trying to run begin-application and
+               died?
+             - once got lots of guys waiting on modal
+                - this was the multiple warnings while file
+                  modified but here I killed the editor window
+                  instead of having to click through all
+                  the silly warning dialogs
+                - I had also run s3 spreadshee several times
+                  and tested various combinations
+                  of modify then try to close and allow or deny close
+
+* would be nicer if widgets had a set of standard preferences they knew
+  how to load/save automatically so we could say:
+    (create <markup> with (prefs-key: 'input-markup))
+  and have it automatically save/restore font, color, etc. properties
+   - also would be cool if it could automatically generate a user-interface
+     for setting its preferences (should be very easy when/if we switch to
+     mozilla)
+
+* have to change source-warning handler so it doesn't show one source warning
+  until it's done w/ the previous one
+    - more impotrant: prevent it from giving same stupid warning dialog
+      for the same file over and over
+
+* swl:begin-application bug/feature
+   - make-app mutex is held the entire time start-k thunk is running
+   - programmer needs to fork thread in start-k if not returnning quickly
+   * audit uses of begin-application
+
+* swl:application-modal bug
+   * Ah! problem is that we're not have to treated fbq-queue field as a stack, 
+     so multiple warnings enqueue and we never restore the old queue, it's lost
+   * multiple warning handlers bug
+      - went application modal on me and left the editor unresponsive to anything but destroy
+      ? while warning dialogs are up, no other window can be created
+   - combined w/ mutex bug/feature of swl:begin-application, this means we can't open
+     new windows while there's a warning up
+
+* Still a race in the code that calls swl:application-modal, since its
+  call to get-app-context might interleave w/ someone else's call to
+  destroy the widget (note destroy-request-handler is likely to go app-modal)
+  so that we think we have a good context but don't by the time we get into
+  app-modal or so that we go modal for a destroyed application
+   * what if students get multiple warning dialogs, one of them is a kill
+     the editor warning while the others are informational, if they choose
+     kill the editor while the other warnings are pending, we could get in
+     trouble
+
+in-drh
+going-modal
+
+if in-drh ok to go modal
+   can't go modal if if drh returns #t
+if modal, block destroy
+
+race in warning-dialog.ss:
+ - call warning-dialog once
+ - call warning-dialog again for same window
+ - have one warning dialog return quit-ok so the toplevel is destroyed
+ - now second call to warning-dialog gets into application modal and finds
+   that the get-application-context returns #f --- or bombs out ----
+    - need to make swl:application-modal take the widget
+       - starts by calling lock-application-context
+         which blocks destroy requests and which fails
+         (use on-error to trap?) (or returns #f) if the
+         application was already destroyed 
+       - if lock-a-c succeeds, we do the modal thing and arrange to unlock-a-c
+         when we're done
+       - otherwise, we don't even run the thunk because the widget is done dead
+         already and all
+
+* gak, splash screen holds the make-app mutex the whole time it's up
+
+   - if we start editor from repl and then exit that repl, we don't see
+     the error messages from save-and-execute because they're printed
+     to the repl (we do see source error messages in the editor minibuffer)
+   - lock-editor needs to be more like (see init.ss)
+   - sanitize-fp is NOP for now
+   - uncomment (send ed raise) in show-error code of init.ss
+   - need to wire in the parameter for open-new-window-to-show-error
+   - still need smarts to parse error messages to decide whether it
+     should try to hilight the whole s-expression or, say, hunt for
+     the string constant that's unterminated, etc.
+   - re-enable class.ss check (search for RE-ENABLE THIS CHECK)
+   - removed swl:set-grab procedure
+   - threads.ss now redefining a host of input/output primitives to
+     work around inlined current-{input,output}-port in Chez Scheme prims
+   - change calls to swl:font-families so that they use the list of sizes
+     specified in repl.ss and edit.ss
+   x warning dialog was application-modal but didn't set destroy-request-handler,
+     so could exit w/o releasing make-app mutex
+   x uncomment tkstream.ss defn of swl:bug-port
+   x uncomment swl:make-error-log-port
+   x removed printf about stripping cp1inline properties
+   x ? left swl:bug parameter in for now
+
+; need to synchronize on this...
+; probably need a watchdog for this as well --- maybe the error handler
+; should fork off separate thread... ---
+; need to think about what happens if the file cannot be opened / found, etc.
+; i.e. if the message never makes it there...
+;  ---> probably should pop up a dialog to explain what's happened
+
+* does get-line in console.ss need a mutex?
+
+* what if we run keyboard-interrupt-handler after we've killed the repl?
+   - start repl, do (read p) (may have to fork thread), close the repl,
+     then hit Control-C in the interaction window
+
+* ack!  we need critical sections all over the place in the port handler
+  of the interaction window
+   - get-line proc seems like it needs some protection
+
+WRONG: adding the critical sections / semaphores made the thing slower
+       than a dog (even if we disable line buffering)
+ACTUALLY: what happened was that I compiled swl with inspector info on
+          so (length (oblist)) was nearly 5 times greater than usual
+          and I was using that as a convenient test.  oops.
+
+* resolve the keyboard interrupt issue in console.ss
+
+* need to implement searching for .swlprefs in:
+   - current directory, followed by looking in HOME directory (screw env var)
+   - need to include init script as one of the things in the prefs and give
+     some way to edit the darn thing (parameterize editor's file save method
+     and its menu item titles?)
+
+? make graphical current input/output ports the default
+   - separate one for each repl, or make this global?
+
+* Fix the destroy method race condition:
+ - left off working in ../fix-race
+     - have each toplevel window create its own fallback-queue
+     - child widgets use get-application-context method to
+       find the fallback-queue (rename method to something like get-event-queue)
+     - menu widgets can do the same thing because they're added to toplevels
+        ? might interfere w/ the SWL menu, but who cares --- pitch him
+     - swl:begin-application / end-application can still fork off thread group
+       but they don't have to muck with swl:fallback-queue
+     - when we get a destroy message for a top-level window:
+        - fork a destroy thread that
+           - enters critical section
+           - kills the thread for the event queue (so that methods running
+             won't be confused about these widgets dying)
+           - when the queue thread exits, then we do the actual Tk destroy
+     ? what about situations where events for one toplevel window want to
+       invoke methods on another toplevel window?
+        - it's almost like each widget needs its own swl-tcl-eval (or needs
+          cooperation from there) so that we can discard calls when the widget
+          is dead
+  * Wait: can we modify fallback queues so that we have a way to push
+    a proc on the front (ie. store linked list in separate field of fbq record)
+    that is to be run on the next iteration of the loop (before the next item
+    is dequeued)
+     - destroy method for toplevel could push a proc that delete the widget
+       and then we combine this with the change in the ../callback-experiment
+       workarea (see diff below) where we check the widget handle before we
+       actually invoke the proc ---- OR maybe the event-queue loop could
+       do this before it actually calls the apply-callback method
+
+           Index: new-console.1/src/swl/callback.ss
+           73c73,78
+           <      (if args (apply proc (if skip-1st? (cdr args) args)) (proc))]
+           ---
+           >      (if (null? args)
+           >          (proc)
+           >          (let ([handle (car args)])
+           >            (if (not (swl:lookup-fallback-queue handle))
+           > (fprintf (swl:bug-port) "SKIPPED callback cause dead: ~s\n" token)
+           >              (if skip-1st? (apply proc (cdr args)) (apply proc handle (cdr args))))))]
+
+* fix paste in <scheme-text> widgets, guessing that JohnZ disabled / broke
+  middle-mouse-button paste, and we probably never implemented Shift-insert
+
+* looks like fallback queues may have the wrong current-output-port set
+   ? need to set current-output to the graphical console port before
+     we create the fallback threads?
+   -> e.g. try starting swl, start a new repl from there via new-repl,
+           cd to tutorials, load guide.ss, open entry.ss and click run,
+           enter some text there and click done ---> text prints to stdout
+           instead of the repl
+
+* update documentation for swl:begin-application (see ChangeLog)
+
+- saturday plan
+  x abstract error-handler code for use w/ warning handler
+  x get rid of the menu history items in the repl
+  x add warning dialogs for various cases where source information cannot
+    be displayed
+  x fix race condition where new editor is opened but file isn't finished
+    loading by the time we go to show the sexpression
+  * deal with locking problem sketched below:
+    what if the editor is destroyed while we're trying to use it to display
+    some error message info or while we're using it to display single-step
+    info?
+      ----> maybe we should request an interface procedure from the editor
+            and carry out all operations via the interface
+             - maybe we have to register an exit continuation when we make the
+               request, so that the editor can kill any active threads that are
+               trying to manipulate it while it may be destroyed
+             - before each operation, the iface sets a "delay destroy" bit,
+               then checks whether the widget has been destroyed, and if not,
+               proceeds with the operation, then unlocks the delay destroy bit
+                - might even pop up a dialog if someone tries to destroy the
+                  editor while there is an interaction pending
+          -  - another alternative is to have each method do the live check
+               internally and return #f if dead and then have the client code
+               check return values everywhere
+          -  - another alternative is to have methods to {un,}register interest
+               in the widget (maybe multiple clients can register interest)
+               with a description of why the client wants to keep the editor
+               alive and a continuation to invoke if the user decides to kill
+               the editor despite this
+                - this could be a refinement of the set-locked! method
+                   - lock before getting content
+                   - unlock when you decide it's the wrong editor or when
+                     you finish displaying the marked up source
+                   - we may want to have a notion of weak locks where
+                     the system is allowed to deny reservation request
+                     without popping up a dialog box, it just has to call
+                     our deny notification procedure
+      ? may want some way to recall the last error message, or some way to
+        guarantee the markup stays there for a little while, but heck they can
+        just reload it if it's a problem, right?
+  - wire in the unexpected end-of-file handler
+     - current draft I have does stupid stuff when looking at ( ... ( ... )
+       because it thinks the outer paren is unmatched, would really need to
+       parse the tokens and look for things like a definition with more than
+       one RHS, etc. to do a better job of helping students
+     - can we improve things in the case where there are multiple string
+       constants and some are unterminated
+       (maybe heuristic to look for line break, or way to highlight all
+        the string constants as seen by the computer)
+  - may have multiple warnings for a single buffer in addition to the errors,
+     - so the debug stuff should queue them up and probably should just choose
+       to show the error, but should also let them naviate a list of the other
+       warnings --- This will also be useful in the case where they want to
+       get pack to the error 
+        - buttons only show up when there are saved error/warning msgs and
+          the buffer has not been modified --- they might have moved arrows
+          around and this would have cleared the error message display ---
+           - as soon as the buffer is actually modified, the error history
+             buttons would go away --- trouble is that they don't give much
+             indication of what they're there for, so
+              * maybe it really should be a menu that builds cascade menus
+                to handle the case where there are too many to fit on screen
+        * basically need to locate the correct editor, then package up a
+          structure that describes the error and lets the widget determine
+          whether the things still apply --- if the modifications made don't
+          change the checksum, then we could re-enable the menu -- or just say
+          hell with it and make them re-eval it since that's pretty low
+          overhead
+  ? add < > buttons beside the minibuffer to navigate through
+    error/warning history
+     * maybe just have a parameter that says pause-for-each-warning?
+     - the other way (Kent may prefer) is to make the students click on
+       the warning or error message in the repl window and have this pop
+       up the actual editor window, etc.  Then the markups in the REPL
+       become an implicit record of where the errors are.
+        - problem with this is if we don't have an open repl
+        - maybe in that case the errors should be going to graphical error
+          window that does the same clicking thing
+
+* test S3 spreadsheet gui.ss and draw-tree code in new system before shipping
+  may just need a few imports, but let's be sure
+
+* scrutinize critical-section and replace with semaphores where this makes sense
+   - hide <sem> class, maybe in threads.ss
+
+* uncomment (send ed raise) in show-error code of init.ss
+
+? we were getting (values) from source error handler on read-err33.ss
+
+* add code to save/restore position of repl and editor windows
+  in preferences file (maybe also the interaction window)
+   - not critical, can do this in local version I use in lecture
+
+* would be nice to permit customization of
+   - both text and markup support foreground/background color, so dialog
+     may be commonizable
+   - foreground, background, and cursor color (set-insert-color! ...)
+     for various text widgets
+      - autoapply to minibuffer as well
+   - parenthesis highlight color
+   - box color
+
+* swl:font-dialog
+   - add support for color (foreground / background?)
+   x (sync) needs to set the label on the size menubutton to match the
+     actual size of the selected font
+   x when the list of size options is empty (eg. no italic fixed fonts)
+     the label on size menubutton should be disabled or blanked or should
+     show "(none)" and be disabled.
+   * add prefetch code from end of src/swl/dialog.ss to init.ss (or something)
+     and have it fetch the preferences and fork a thread to precompute font
+     availability in the background.
+
+
+* incorporate the console.ss code
+   - should we set up console-error-port before installing thread system?
+   - maybe we should trap the destroy method and just delete the text widgets
+     contents
+      - probably should make closing the port a no-op as well.
+      ? may want to give each repl its own interaction window
+   - modify option font dialog thing to also permit color spec (ie. markup)
+   - modify repl to allow customization of color / font for input exprs
+      - color dialog probably needs to permit selection of
+        foreground and background color
+   - add color customization there
+   - add preference for "Raise on output"
+      * NOTE, probably should always raise on input, at least if blocking
+   - need to add the save/restore preferences code there
+   * currently, forking a new repl either via menu or by (new-repl) causes
+     the current-output-port and current-input-port of the original repl to
+     be set to the repl-port built by the new repl
+      * this may be because current-*-port is hacked to go directly
+        through the real Chez Scheme thread-context structure and the 
+        threaded parameter code uses the old param as a filter.
+         - ie. the C code probably isn't seeing the local param change
+         - can we somehow build a Chez Scheme thread structure for our threads?
+      ? otoh, it seems that the parameter itself isn't working...
+
+ x update the preferences code to look in
+    * bullet-proof prefs code so it doesn't get confused by bad data/errors
+      ./.swlpref        ; current directory first
+      $HOME/.swlpref    ; home directory next
+        ; for CFS that we give UITS look in
+          (let ([user (getenv "USERNAME")])
+            (or (and user (try "//cfs.indiana.edu/" user "/SWL/.swlprefs"))
+                (try "M:/SWL/.swlprefs")
+                --- no prefs ---))
+    - code should save the path of successful preference loading
+    * add prefs code for running something on startup --- probably even
+      before we show the repl ---> maybe show splash screen first, though
+    - if we use the "cwd then home" search path ordering, we probably should
+      pop up a dialog box to give them a choice of where to save the
+      preferences:
+        (or just tell them to copy it manually to dir
+         and change menu title to "Save local preferences" or
+         "Save ~a preferences" w/ cwd)
+        use these preferences
+         - whenever I start swl
+         - only when starting swl in this directory
+
+* implement a useful $source-error-handler for SWL that pops up the editor w/ location
+  highlighted  --- unless msg is unexpected end of file error from read --- then it should
+  do an incremental read to show them where it left off (or maybe leave this for the expert)
+   * NOTE:
+      - be sure to test via save-and-execute button
+         ---> I suspect that guy isn't forking off a thread that's
+              properly initialized.
+   * abstract the hooks well enough that we can reuse them for the stepper
+     and so that we can have the stepper provide error hooks that tell them
+     just where the error occurred (ie. in which call to cdr ...)
+      - cpdebug needs to help with following:
+        (for these, just showing a Where? (or Whence?) button that
+         shows the call site would help --- if our source info is good enough)
+         * modify as-time-goes-by so that it sets a flag that is checked by
+           the instrumentation code inserted by cpdebug and complains that
+           it's meaningless to time instrumented code...
+         - error incorrect number of arguments to procedure ...
+         - error attempt to apply non-procedure ...
+            - often extra parens wrapped around variable bound to non-procedure
+              type inference thing would help here, but it's really a syntax
+              error
+         - error ... is not a ... (e.g. void is not a number, () is not a pair)
+         - error in list-ref ... or any number of other prims
+         - error variable ... is not bound
+         - error in record-accessor: record that looks right is not of type
+           record ...  (ie. they've built some test data and have redefined
+           the record type since they built the test data)
+         - error in open-output-file ... file not found (windows person w/o
+           write access in current directory)
+   * modify repl so that Editor's Save and Execute button does something
+     useful still even if they close the only repl and then do Save and
+     Execute where there is an error
+      - it may be that hooking the source error handler is enough to make
+        this sensible
+      - looks like we capture the value of console-error-port when the
+        editor's application thread is forked --- must be making a copy
+        of all the existing parameter values
+   - replace the printfs in error handler code with something that pops
+     up a warning dialog
+   - error handler can parse a few of the strings to look for:
+      - error in read
+         - if it's unexpected eof, try doing file position and reading
+           as far as possible and hook the error handler to catch when
+           it blows --- saving file position before each attempt ---
+           so we can show them where the computer was when reading file
+            - be sure to check for "unexpected end-of-file reading string"
+              for that we can do a better job
+      - "invalid syntax" or "invalid context for definition"
+         ? consider plugin architecture where we can ship out new error
+           message parsers (or help) to the students
+            - these parsers could look for patterns they can help with
+              and direct the editor on how to display the error location
+              and could provide suggestions to the student on how to go
+              about fixing the problem.
+            - could install "Help for last error" in the help menu of the
+              editor that is notified of the error
+            - e.g. for "invalid syntax" they could try to parse the expression
+              that's supplied in the error message and see if they can suggest
+              some help --- ie. too many or too few arms to an if expression
+         - locate editor (or open editor if preference permits)
+            - if file is already being edited
+               - if buffer has been modified vs. source info, and if we're
+                 supposed to show window w/ errors, notify user that the file
+                 seems to have changed in the edit buffer since the version
+                 that was loaded (probably best to refuse to open new window
+                 in that case or the students will get confused --- no file
+                 locking)
+               - jump the cursor to the right place and show the text of the
+                 error message in the minibuffer
+               - maybe print some sort of suggestion for how to proceed,
+                 or put that on the help menu
+            - if file is not being edited, check pref and open file if allowed
+               - if you can't open the file, notify user of this problem,
+                 but don't do it as an error or they'll lose the debugger
+                 continuation
+         - jump cursor to given file position and highlight the S-expression
+            - if it's a list, then we can just set cursor position one to
+              the right and editor will highlight for us
+              (might be better to modify the editor to be able to highlight
+               the S-expression following the cursor point, but be sure to
+               use the same mechanism to remove the highlight)
+            - if it's a keyword, we may have to hilight it ourselves
+              (or just skip the highlight)
+            - nice thing is that editor already handles the highlight for us
+   ? could provide a Window menu that lets you raise the window you want
+
+ - (in progress) consider revamping repl/edit interface: add an "open" file
+   menu item in repl that opens a new edit buffer; change "open" file menu
+   item in edit to do the same; change quit to close on both file menus;
+   add exit to both file menus; add Version to file menus or replace
+   with top-level 'about' menu button; flush SWL menu.  Consider opening
+   files passed on the command line instead of loading them.
+
+ * suddenly HTML viewer seems to choke on tables (no longer loads the
+   on-line help for repl and editor properly --- skips over the table?)
+
+* destroying the repl should probably close the repl port for real
+  via mark-port-closed! ---- actually, the students could do that and
+  shoot themselves in the foot, right?
+   - should protect ourselves against this, but Chez Scheme doesn't seem to
+   - maybe some kind of global error handler that intercepts these things
+     and averts disaster ?
+
+* do away with cafe-level so that forked repls always start with a > prompt
+  instead of increasing >>> prompts
+     [ thread.ss and repl maybe? ]
+
+x (display (make-list 100 'foo)) doesn't generate output in the repl, but
+  does work as expected if we fork off a new repl (via menu or via new-repl)
+    - actually it works ok in the initial repl until we fork off the new repl,
+      then the first one doesn't generate output but the second one does
+      (more parameter weirdness?)
+
+ * scratch the (when (swl:bug) ...) code in swl:event-dispatch
+   (we can always load patched code if we really want to see that junk)
+
+ * installation scripts: Wise (Windows), RPM (Linux), and "make install"
+    - use registry to locate SWL library where we're currently using
+      the environment variable
+
+ * mechanism for saving/loading preferences on Windows
+
+ * open dialog in editor should return to directory of last open; should
+   also have recent-documents list
+
+? package up one big real swl module from which we can import everything
+   - I've tried and failed several times now to get the system to build as
+     tidy little modules.  This is *exceedingly* frustrating.
+        [ left off in swl.module-attempt.part-way-done-with-explicit-modules ]
+   - current plan is to push ahead and add the functionality we want
+     and then relocate any offensive user-visible bindings via some sort
+     of low-level hack like we used to build the scheme module in the first
+     place
+
+* try to modulize everything to achieve namespace purity
+    - test thread primitives more extensively (see list at top of threads.ss)
+
+ (define read-report
+   (lambda (file)
+     (with-input-from-file file
+       (lambda ()
+         (let f ([ls '()])
+           (let ([x (read)])
+             (case x
+               [(#!eof) (list (reverse ls))]
+               [(compiling)
+                (let ([filename (read)]) (read) (read) (read) (read)
+                  (if (null? ls)
+                      (f (list filename))
+                      (cons (reverse ls) (f (list filename)))))]
+               [else (f (cons x ls))])))))))
+
+(define find-missing-import     ; hack, needs better def/use support from cpdebug
+  (lambda (ls)
+    (for-each
+      (lambda (entry)
+        (let ([filename (car entry)])
+          (for-each
+            (lambda (sym)
+              (when (gensym? sym)
+                (let ([raw (string->symbol (symbol->string sym))])
+                  (putprop raw 'gensym filename))))
+            (cdr entry))))
+      ls)
+    (for-each
+      (lambda (entry)
+        (let ([filename (car entry)])
+          (for-each
+            (lambda (sym)
+              (unless (gensym? sym)
+                (let ([src (getprop sym 'gensym #f)])
+                  (when src
+                    (printf
+                      "~s refs global ~s instead of version exported by ~s\n"
+                      filename
+                      sym
+                      src)))))
+            (cdr entry))))
+      ls)))
+
+? fix warning about possible premature reference to the-class
+
+editor
+ - save and execute button should show some notification in the
+   corresponding repl window (the one from which we forked the
+   editor or the one we forked from the editor)
+   and perhaps should raise that window to the front
+
+* seems a bit strange that we get segfault if we start SWL, then
+  start a recompile of SWL, wait for the heap to be saved, then
+  post a menu (or click on a menu posted during the compile)
+   - expected that heaps would be copy on write
+
+* looks like the "possible attempt to reference" warnings (e.g. see edit-text.ss)
+  may have something to do w/ protected methods (try the foo bar baz test at the end
+  of src/oop/test.ss)
+
+x improve look of menus
+x get rid of left-arrow and right-arrow (elim arrows.ss from make.ss)
+* provide persistent preferences
+* style -- font / color
+
+* figure out why some of the tutorials don't load
+   ---> actually important since it may indicate problem w/ import of modules
+   * looks like it's cases where we use api-syntax such as create within
+     another file (ie. src/swl/menu.ss) that doesn't import swl:syntax
+
+----> hunt down other uses of api syntax and explicitly import swl:syntax etc.
+
+* Revisit these files to see that they import everything they need (ie. including the new swl:option)
+    ./src/swl/menu.ss
+    ./src/swl/syntax.ss
+    ./src/swl/option.ss
+    ./apps/consbox/consbox.ss
+    ./apps/graph/graph.ss
+    ./apps/lecture/lecture.ss
+    ./apps/automata/tm.ss
+    ./console.ss
+    ./tutorial/canvas.ss
+    ./tutorial/menu.ss
+    ./tutorial/button.ss
+    ./tutorial/toplevel.ss
+    ./tutorial/image.ss
+    ./tutorial/entry.ss
+    ./tutorial/label.ss
+    ./tutorial/guide.ss
+    ./tutorial/animal.ss
+
+x move swl:startup from teventloop.ss to init.ss so that it follows menu.ss
+  actually seems to make more sense there anyway.
+
+x trying to figure out why apps/automata/tm.ss doesn't want to work as module w/ imports
+   x looks like option.ss has to be module-ified so it's compiled w/ local import of
+     the swl modules
+
+x get rid of worrier.ss and its uses
+
+x when repl dies, it should kill the newline semaphore thread
+   - not sure why it takes so long to fall away by itself
+     (seems like you have to start a new repl in order to force
+      it to reclaim the old one --- perhaps the new
+      repl is overwriting some inadvertently global thread
+      parameter that was hanging onto the previous repl)
+
+x (fixed) Annoying bug:
+    - have to import swl:oop at top-level in order to get create of
+      SWL classes to work in:
+        (let ()
+          (import swl:oop)     ; wouldn't mind this so much, but doesn't work
+          (import swl:macros)
+          (create <toplevel> with (title: "testing")))
+    - looks like perhaps <base> isn't visible to them but it somehow is
+      when we import at top level
+            ((<base>
+              'make-instance
+              #{|##shh-its-a-secret##<toplevel>| |/Rbftrn2D4<U$\\<=|}
+              (() #{handle |/SF+~0Xx0bQnK\\*|}
+                  #f
+                  ()
+                  ()
+                  ()
+                  (swl:fallback-queue)
+                  #f
+                  (lambda (#{x |/SF+~0Xx0bQnK\\+|}) #t))))
+    x maybe we can fix this by placing the class definitions within a
+      module that explicitly imports swl:oop
+
+x (fixed) we get infinite loop trying to expand guide.ss unless import swl:oop
+  - looks like the generics are going berzerk because we haven't done
+    an import swl:oop for the macros
+     - yes. problem is we expand into (define-syntax name ...)
+       where the macro produces a reference to name --- normally ok since
+       the reference is in the context of send macro but if swl:oop isn't
+       there, the expander thinks its an application and hits the id macro again
+       and again
+     - maybe we could put the macros in a module that imports swl:oop
+
+x changing preferences for one <repl> window shouldn't change it for the others unless
+  you say save preferences, and then changes should only affect new instances that we
+  open
+    - seems like we need to make preferences local to widgets and make the save-preferences
+      method actually flush them to the global cache and the disk
+    - then preference lookup always goes to the local widget store first and if neceesary
+      goes to the global cache
+    - one possibility is to have the application init guy store away an alist for this
+      instance of the app to modify.  it would load and copy the global list.
+       - ie. set-prefs-key would init the prefs key and reset the options list
+       - also need some method for apps to set preferences
+       - but then we need a save preferences method
+         - concern is that we could have several different widgets in a hierarchy
+           that would have to be notified
+         - maybe we want to create a preferences object
+              instead of (prefs-tag: '<repl>)
+              instead of (prefs-entry: (make-prefs-store '<repl>))
+         - whether or not we have separate external object for prefs store,
+           it's probably more convenient to have SWL methods for dealing w/
+           prefs:
+; put these at tk-object level?
+; would need subclasses to implement a get-parent method (e.g. <menu>, others already have it)
+              (load-prefs self tag)        loads tagged prefs and creates local cache
+                                           marks this widget as the root of prefs tree
+                                           so that children delegate to this widget
+                                           for all the other methods
+              (save-prefs! self tag)       saves local prefs in global cache and disk under tag
+              (set-pref! self key val)     stores val under key in local cache
+              (get-pref self key default)  fetch from local cache
+
+x (fixed)  out-of-memory error while trying to open viewer
+ - oops, looks like we weren't loading all files that the
+   require thing normally would have loaded
+ - wait.  it looks like we're having issues with the "SWL Error"
+   window that's supposed to pop up for background errors
+ x seems that this is some consequence of compile-file + visit instead of
+   compile-file + load
+
+x REPL BUG
+  while trying to enter the following in repl, the line indent code seems to have gone
+  haywire and indented to beginning of line --- wouldn't let me backup in editing, etc.
+  after I'd hit enter on the last line you see below:
+    * AH HA!  it's because we were looking for a particular error message
+      and it's coming in a little differently now (ie. because we don't have
+      exceptions it was hacked)
+
+    (cond
+      [1 2]
+
+----------------------------------------------------------------------------------------------
+
+(define user-visible?
+  (lambda (sym)
+    (or (#%\#sgetprop sym '*cte* #f) (top-level-bound? sym))))
+
+(define report
+  (lambda (file)
+    (with-output-to-file file
+      (lambda ()
+        (for-each
+          (lambda (sym)
+             (when (user-visible? sym) (pretty-print sym)))
+          (oblist))))))
+
+see report in user-visible
+ - ./user-visible stripps out the #{...} (gensyms) and "swl:" prefixed ones
+   and strips out the ones that are present in stock Chez Scheme
+ - at least 41 of these are in threads.ss
+
+----------------------------------------------------------------------------
+This is getting out of hand
+ - maybe just not worth it, maybe try quick fix instead
+ - but that's doomed too unless we have some way to hide the swl macro
+   definitions and then get them back selectively (maybe some really nasty
+   local macro?)
+    - basically take a snapshot of the oblist before loading and after loading
+      and squirrel away the *cte* properties to preserve macros
+    - kind of like:
+        (let-syntax ([foo (#%\#sgetprop 'let '*cte* #f)])
+            (foo ([x 4]) x))
+    - what about non-syntax items?
+
+fix "paste of multiple complete expressions" bug
+
+----------------------------------------------------------------------------
+
+ * silly that option menu permits default that may not even be in list
+   [ dialog.ss ]  / credit Mark Mine at Disney for pointing it out
+
+ * copy, cut, and paste should not be enabled when not applicable
+   
+ * undo feature in editor (tcl/tk supertext package?)
+
+ * in the rewrite, think about composite widgets from the start.
+     - applications could be viewed as composite widgets
+
+ * in the rewrite, we should abstract the definition of widget classes
+   to make the slot setters/getters explicit (and tighten the code) so
+   that folks could change the macro if they want to, e.g., reflect on
+   the set of slots / legal values / etc. [Mark Mine mail]
+
+** remember to fix the stupid callback memory leak.
+** replace select-file used by edit.ss w/ swl:file-dialog.
+** forgot to update tutorial text to reflect rewrite of code.
+
+* adopt a consistent format for the Todo list and impose some structure on it
+    - eventually introduce mechanism for maintaining bug lists and the faq
+      (eventually == on demand)
+
+* abstract and make more robust the code that looks for documentation
+  in the SWL_ROOT dir
+
+* documentation
+    - reorganize
+      (current partitioning of procedures vs. macros, etc. is stupid)
+    - document that SWL needs Tk >= 8.0.4
+      (may need a release notes file)
+    - document the menu-item classes in menu.ss
+      (and change define-swl-class to expand into swl:api-class)
+
+* "reorganize the code" (ie. throw out and rewrite)
+
+* remove raw-check stupidity in menu.ss <menu> class:
+    - certainly for y-position it makes sense, but for many others that just
+      do a set-tk-option or get-tk-option, we should be able to cache the value
+      and use it when we eventually do parent the menu
+
+* remove error checks that insist on boolean values for various options
+  (it's unschemely) just convert to boolean where we call set-tk-option...
+  Most of the code to do this has already been written in the <proto-menu-item>
+  class.
+
+* I/O ports are fubar during evaluation via the new Alt-E editor option:
+  ports currently pointing to the tty.
+    - should use the repl from which the editor was invoked,
+      or use whatever repl is available, or open a new repl
+    - repl bug(?)
+       - if background thread sleeps, then tries to read from console
+         (eg. after repl prompt is printed) the next input goes to the
+         repl rather than to the thread (that did the most recent read):
+            (begin
+              (thread-fork
+                (lambda ()
+                  (thread-sleep 3000)
+                  (printf "enter something: ")
+                  (pretty-print (make-list 10 (read)))))
+              'ready)
+       - the repl always ensures that the prompt follows any output
+         (this is good) but in the case where another reader comes
+         along and tries to slurp up the next input, perhaps the repl
+         should move the output mark and allow the program's prompt to
+         follow the repl prompt (and give the program the next expression
+         read).  This shows up with the program above, and with programs
+         that do I/O that we evaluate in an editor via Alt-E (when we get
+         the I/O going to a repl rather than a tty).
+
+* introduce a ~/.swl directory by analogy with KDE's .kde:
+     ~/.swl
+     ~/.swl/apps
+     ~/.swl/apps/repl/preferences
+     ~/.swl/apps/htmlview
+     ~/.swl/apps/htmlview/cache  ; instead of TMP in apps/htmlview/html-text.ss
+
+* Revise the (hastily added) add-follower remove-follower on-destroy code.
+  Only use so far is in swl:file-dialog.  Perhaps we could get away with
+  on-destroy only.  Trick is removing thunks added by other toplevels that
+  have since been destroyed.
+
+* repl
+    - should "hit newline" for us when we paste several expressions
+      that were separated by newlines in the cut buffer
+      (I fixed it a while back so that it worked for single expression
+       pasted in this way)
+    - Ctrl-D should test whether the cursor is at the end of the buffer
+      and, if so, generate eof.  If there's no character to delete, return
+      eof.
+    - need better preferences stuff
+    - rewrite the template code (on demand)
+        - currently broken:  evaluated immediately when inserted (sans editing)
+        - generalize templates so they can be user defined
+        - allow input error checking
+    - add macro-aware syntax highlighting
+    - add macro-aware identifier completion (via tab)
+    - add filename completion w/in string quotes
+    - <app-text> currently assumes mini-buf is an <entry> (<label> may be better)
+    - is his <scheme-text> hack setting begin-exp, etc. really necessary?
+
+* editor
+    - needs tons of features (undo, vi bindings, etc.)
+    - (new-edit x) when x is a new file, should set the name of the current
+      file (so that Alt-S will save the thing --- shouldn't have to use Alt-A)
+    - apps/design/design.ss doesn't run, not sure what state John left it in
+
+* add more comments to applications
+     - tm.ss
+         - merge w/ the graph drawing code?
+* tutorials
+    - change tutorial so that either
+        - text is not editable
+        - text is editable and Try It runs the updated code
+          (should use a <scheme-text> in this case)
+
+* need to abstract the stupid (memq (machine-type) '(i3nt ppcnt)) tests
+  with something more like (windows-box?)
+
+* introduce swl:parameter mechanism
+    - repl's "input-markup"
+    - automatically generated preferences thing
+    - per-application swl:parameters (transparent unique naming)
+    - automatic support for "registry" (Tcl now supports Windows registry)
+      (use ~/.swl/<app>/options on unix)
+
+* need to support key bindings for
+    - menus (arrow / enter traversal, accelerators)
+    - "unsaved file" dialogs  (eg. Esc to cancel)
+
+* Test whether it will speed things up to wrap all tcl code in { } before
+  evaluating (warning, this may break some scripts, too).  They claim it's
+  faster this way.  It may not be hard to find the few places this would hose.
+
+
+* investigate Tcl 8.0's new html stuff.  perhaps we can replace some of the
+  code in apps/htmlview?
+
+* to get the swl:error-log-port window to show up above all the other windows
+  (or at least above a useful window) we could simply grab (swl:current-focus)
+  and if it's not #f, climb it's get-parent chain until we get to a top-level,
+  then use that top-level as the one on whose behalf we should be transient.
+
+* why does it take 10 seconds to destroy an htmlview window?
+    - try looking at the documentation for methods (a large file)
+      then quit the viewer and it takes quite some time to disappear
+
+- fix stupid scrollframe spastic loop bug.
+    * have forgotten the details but seem to recall that this was nearly
+      impossible in Tk 4.2 even if we use the grid geometry manager.
+
+- bug in netport with window path name having uppercase letters?
+  (a parameterize problem??)
+
+* do something to make loser-error checks in "make" macro cheaper.
+
+? need threads support for (call/cc reset-handler) in teventloop.ss
+
+Problems w/ edit.ss / repl.ss / and SWL:
+  - read-line is bound at top-level; seems to override user definition
+  - cannot save named file (no 'replace ?)
+  - cannot edit or overwrite open file
+  - open dialog box does not remember directory changes
+  - orange paren balancer obscures paren/bracket
+  - no greeting/chez scheme copyright notice from SWL
+  - delete should delete next character
+  - no cut and paste in repl   (need kbd shortcuts as well)
+  - no cut and paste across edit window files
+  - no include in edit
+  - should have file and edit menus on repl
+  - should be able to load, start/end transcript from file menu
+  - no s-expression movement (or not in help menu)
+  - repl window doesn't advance to the right as you type
+  - killing repl blows away open edit files
+
+- mechanize process of building binary release.
+- automate process of building binary release for Windows 95.
+
+- src/swl/Makefile dependency on bin/<arch>/oop.boot broken.
+
+* bug in object system:  fluid-let doesn't work for ivars because
+  object system locally redefines set! to get around fact that identifier
+  syntax doesn't yet give us a handle on assignments, only references.
+     - suspect this will go away if we enrich macro system a bit, but it
+       would be nice to be able to implement this at the user level...
+
+- clean up namespace use by event.ss (and init.ss) e.g., enter-cbproc,
+  leave-cbproc, etc.
+
+- fix tutorials (eliminate use of generics?) to deal with workaround from
+  7/07/97 that torches the generics when building a runtime for students.
+
+- may be able to build PPCAIX now using load-shared-object instead of custom.
+    - snag ldAix from Tcl/Tk
+- fix Tcl/Tk bug under PowerPC AIX 4.1 that gives error message:
+       % fconfig stdin -blocking 0
+       error setting blocking mode: invalid argument
+    - in the meantime use apps/repl as the console under Windows NT and AIX
+x workaround problem w/ alt & num_lock keys under Windows NT.
+    - introduces some platform dependence (have to expand the source code
+      on the same machine on which it's to be compiled)
+-   * should write to Tcl/Tk team and ask why different %s values returned?
+      [see if it's same on i3nt]
+-   also tell Tcl/Tk folks about error trying to set stdin non-blocking
+    invalid argument.
+x add Notice file to toplevel dir
+x try building on ppcnt and ppcaix boxes
+- add README / Install instructions.
+x add to Makefile some stuff to build a repl that's compiled
+x add something to make the swl scripts
+- add some way to fire up SWL without trying to connect to display
+x double check foreign_symbol declarations in foreign.c
+- (exit n) does not set shell status var.
+* nuke the stupid watchdog in set-grab.  rename to swl:set-grab.
+* fix lookup-callback memory leak
+    - inspector got it up to size 93493 then 163612 while inspecting huge
+       structure 5000+ size vector (the lookup table itself)
+    - my original markup code used to avoid creating the stupid tag binding
+      when the method was no different from the base method, JohnZ needed
+      different functionality so I took out the "optimization" until we can
+      automate the analysis that determines when it's safe
+    - perhaps we can mark the callbacks that are one-shot (eg. those used for
+      Tk's "after" command) and get a better story for reclaiming their tags
+    - If we're not already, we should be holding the callback procs with weak
+      pointers.  When the pointer is dropped, we can reclaim the index.
+      Should be easy to maintain a freelist...
+* comment out all the swl:show/hide-balloon-help code.
+  (see for example, the code in base2.ss that looks at this stuff)
+* documentation
+   - on-line help
+   - restore thread system documentation
+   - index
+       - figure out how to get scheme things to show up in scheme font
+       - perhaps trim some things like (probably just nuke some of the
+         "illustrates" items in the tutorials' tutorial macro)
+           font:
+             using, 6
+       - have separate index of methods and index of classes? with pointers
+         from them to the other index.
+       - generate an index listing each method and the first class in which
+         it appears  (or make the index number for the page where it first
+         occurs (with documentation!) boldface)
+   - add documentation for apps/common
+   ? add/document other standard dialogs?
+   - theory of operations
+   - improve the writing in the documentation
+   ? get texer running for the tutorials.
+   x add/document file dialogs
+   x amend missing documentation
+      - when inherited method has no documentation, look for documentation
+        for method in the base class...
+   x tidy up display of classes:
+       x skip ivars and display only the inheritable ones, etc.
+       x crack ivars out of their lists into a comma-sep thing like keywords.
+       x kill extra space above keywords.
+* clean up
+   - clean up apps/common
+       - torch select-file and all references to it in apps/*/ code
+         WAIT:  maybe not... right now Tcl freezes our whole application
+                when it puts up a file select box.
+   - rename tk->boolean, etc. to tcl->boolean
+   - nuke inheritable instance vars in canvasitem.ss
+       * quicker fix is to just comment out the part of src/dc/dc.ss that
+         generates that part of documentation
+   - strip grid or pack and document the winner.
+   - need error checking in swl:file-dialog
+   - swl: prefix on globals.
+* repl bugs:
+   ? seems to hack on some parameter it shouldn't because starting a repl
+     makes it possible to hit ^C on the console a few times to exit the
+     SWL session
+   - possible to get a debug thread and a cafe thread alternately reading
+     from the same repl window.  total bummer.  we may be able to
+     fix it by banging in a new "input ready" queue for the debugger and
+     removing it when he's done.
+* think about torching the special key-code guys (at least as symbols)
+  in event.ss  --- it's making the oblist humongous.  at least we could
+  stick it into a development library.
+* eliminate the sleeping thread hack in teventloop.ss
+   - fix signal stuff
+   ? fix Tcl's stdin linebuffer stuff.
+   - fix whatever bugs are causing the cruft at the event of teventloop.ss
+x hunt down sub1 / add1
+* here's how to cause embarrassing behavior on console:
+    > (cdr)
+
+    Error ...
+    > (debug)
+    debug> i
+    #<system continuation in dynamic-wind>                            : d
+    #<system continuation in error>                                   : s
+      continuation:          #<system continuation in top-level>
+      free variables:
+      0: (#<system procedure cdr>)
+      1: "incorrect number of arguments to ~s"
+      2: #f
+    #<system continuation in error>                                   : r0
+    (#<system procedure cdr>)                                         : s
+      0: #<system procedure cdr>
+    (#<system procedure cdr>)                                         : =>
+    (lambda (x) (x 3)))))
+    
+    Error: attempt to apply non-procedure (#<system procedure cdr>).
+    (#<system procedure cdr>)                                         : ^D
+    
+    debug> > ^D
+    debug> > ^D
+    debug> > 
+
+
+- why are certain markup methods not text methods instead??
+
+LATER:
+? generalize fallback mechanism and reimplement SWL's fallbacks on top of it?
+   - make callback's into structures instead of objects
+? perhaps move the selection of fallback queue mechanism into the callback
+  so that system queue stuff (such as non-blocking I/O file-event notify and
+  socket notify) don't have to forge the system event queue token.
+- try JohnZ profiled-malloc to see if there are any leaks...
+
+
+* recent change to send-base has hosed Erik's  inspector
+  (because he needs to capture send-base for his svelte-class thing)
+
+* need to trap various exceptions that can be raised (eg. in select-file
+  we can be denied access to a directory, or denied access to the file
+  whose name we return in select-file)
+
+* ANNOYING BUG
+   after running happily for a while, astview starts complaining like this
+   whenever I try to open up an inspectscape window:  (note that we're not
+   trying to set this font anywhere -- Tk's trying to set this font)
+
+   Fallback thread (2) error: font "-Adobe-Helvetica-Bold-R-Normal--*-120-*-*-*-*-*-*" doesn't exist.
+
+   I *think* this is a bug w/ eastwood's X server.
+
+* get rid of the skip-1st? test in callback.ss (make two classes...)
+
+* do we still need the stupid tk-destroy stuff?  seems we shouldn't
+  now that we've got the WM_DELETE_WINDOW protocol nailed down (eg.
+  we should know when a window gets blitzed.)
+
+* reconstruct what the foreign.c copy_args stuff is all about
+
+* make sure we integrate $n/Todo with this todo list (might be diffs much
+  lower down...)
+
+* Implement better fix for bug where background thread attempts console I/O
+  after repl has exited.  Perhaps pop up dialog w/ "suspended tty output"
+  kind of message.  Try the following code in the repl.  Right now the
+  thread isn't suspended.
+
+   (begin
+     (thread-fork
+       (lambda ()
+         (let f ((n 0))
+           (thread-sleep 1000)
+           (printf "hello ~a~n" n)
+           (f (+ n 1)))))
+     (exit))
+
+* also must grab the canvas.ss stuff from $n
+*** check to see that item-cache stuff is still valid  (eg, mouse-leave)
+
+
+* must be able to determine the queue that should receive the fallback
+    - could base it on the first arg, make it a symbolic handle
+      that Tk returns to us (either widget path name, or a token
+      we've passed to coerce->cbproc -- assuming mod to coerce->cbproc)
+    * must fork new thread to evaluate destroy methods
+      (in case widget's fallback thread is hung)
+    * toplevels have special destroy-notify proc that needs to run safely
+* take out stupid stuff in swl:make-fallback-queue
+* take out stupid error checks in lookup-callback (conditional compile)
+* take out the stupid (swl:bug) diagnostic checks  (callback.ss and teventloop...)
+* at some point enable shrinking of the callback table...  maybe put a hook
+  into the collect-request-handler for it...
+* Fallback thread (1) error in hide: instance has been destroyed.
+   (canvas.ss in tutorial)
+* try modifying nb-io.ss to do the idle-thunk in a different place
+  (see if we can get our events flushed w/o swamping the system)
+* incorporate the canvas.ss optimizations of $n/src/swl/canvas.ss
+* fold out some of the make-event-handler stuff and do-event etc.
+  into swl:event-dispatch (or let 5.0e optimize it)
+    - if we can truly ensure that s_eval always returns at least a
+      certain number of args, maybe we can make that process more
+      efficient...
+
+
+- add the winfo screenheight .       winfo screenwidth .
+- swl bugs to fix
+    - cascaded menus currently broken fix now
+    - destroying parent makes subwidget kids unhappy
+        - text
+        - canvas
+    - see bug report in recent mail form johnz
+
+- apps
+     - common
+         - create file selection box
+             - use in fileview, automata, netport?
+     - fileview
+         - connect the control panel and fileviewer better
+         - annotate symsets and places where we have symrefs ??
+           (post pass)
+     - graph
+         - make the DFS stuff work
+     - automata
+         - connect-mode bug Kent found
+         - bug where thread continues running after window is closed
+         - start button should first unhilight all states
+         - alpha conversion for state names on load/save
+         - fix definitions of the machines
+         - abstract and make DFA  NFA versions
+     - tutorial
+         ? need quit buttons on all those turkeys
+
+- documentation compiler:
+    - when generating HTML for the tutorials, convert the code to Scheme applets
+
+- look into X server extension:
+     Backing Store  (per window basis)
+
+- how the hell (or does) the err-flag guy get set right by foreign dude
+  esp since we're passing it as string rather than scheme-object
+
+? need some kind of (require ...) or depends notion so that we can
+  automatically build makefiles?
+
+- send-base for protecteds could be useful, but so is the override, resolve?
+
+- left off in text.ss (and entry.ss) working on select-mode stuff to
+  get words/lines selected,  see  begin-selection in text.ss,
+  trying to have make-index-for do the right thing for us (allow Tcl qualifiers)
+  and make mark or pair
+
+- update apps code to use new hscroll vscroll methods
+  (rename to xscroll yscroll to be sure we've caught them all and
+   for consistency?)
+
+- what is the theory of return values?  Should things that I have returning
+  #f as an otherwise value do so?
+
+- to prevent errors when children use parent's handle explicitly.
+  Still need to prevent children from using parent handle after it's
+  been destroyed, so fix the destroy method of parent so he only
+  destroys after all kids die.  This might be useful in text.ss stuff
+  as well.
+
+- text functionality:
+     x tag ranges <tagname>
+     x tag names <index>         (lets anyone grab your markup instance, bad?)
+     ? tag prevrange index1 index2
+     ? tag nextrange index1 index2
+
+     - need provision to collect markups if the text to which they're
+       attached is deleted (could hold markups with weak pointer and
+       have guardian in collect-request-handler check them for liveness
+       and reinstate them in the text widget if live)
+
+- take out the experimental ivar-banger in base destroy??
+
+- do better job with tag-ranges in text.ss (is it worth it?)
+
+- use a hash-table other than the symbol table to store/lookup the handles
+  of widgets (or at least the markup handles, see the hacks in text.ss
+  markups-at method and markup.ss new-markup-handle for more details).
+
+- add to changelog:  changes to proto.ss button.ss and menu.ss to
+    fix the problem of menu items that kill the application giving us
+    error messages as they try to hide the destroyed menu, etc.
+       - verify that set-relief! doesn't complain anymore with $n/mtest  Nuke
+
+- dramatically modified canvas.ss and canvasitem.ss (should help perf, too)
+
+  actually, I think the solution is to modify the scheme->tcl method of
+  the canvas (or any other widget that can be used by it's children in a
+  tcl-eval) when that widget is destroyed, so that scheme->tcl produces a
+  better error message:   child of <canvas> attempted to use dead canvas
+   (or something)
+
+  actually, the error message that we used to give also sucked, so why
+  bother with the old clumsy way?
+
+    - concern:  if one thread starts to call a canvasitem method that is
+                going to do (tcl-eval parent ...) and gets swapped out just
+                before the tcl-eval, and another thread meanwhile destroys the
+                canvas, we can have problems
+    - possible solution (would work except for cases where the tcl-eval is
+      to get a value) is to make destroy of canvas atomically modify it's
+      scheme->tcl method to be something that prevents the tcl eval from
+      mattering (eg. send the port a special reset message, or just emit
+      a Tcl comment character)
+      We could also change the scheme->tcl method to emit something that
+      will let Tcl give us a usable error message that we can catch on the
+      Scheme side.  (these cases are always errors, it would just be nice
+      to give a sane error message).
+    - what if we put critical sections around all the methods
+         [I don't think this solves it at all]
+      (perhaps in the dispatch code to avoid huge code bloat?)  how big a
+      performance hit are we talking about for that?
+         on eastwood, a tail-recursive loop that decrements and increments
+         up to n (optimize-level 3) takes 
+            5 ms for n = 100,000 and 47 ms for n = 1,000,000.
+         If I throw a critical-section around the test of the if
+         (preserving tail-recursion) it now takes
+           between 278 and 405 ms for n = 100,000  and 4 seconds for 1000000
+         So adding a critical section to this code (that doesn't do much)
+         makes it a hundred times slower.
+    - want to find better performance alternative (maybe we don't allow
+      canvas to be destroyed until all kids are, or something)
+        
+
+
+- is there a clear-selection on specific range method for entry/text/listbox ?
+- can we now omit entry specialized scroll code?
+    - hard to test from home, but looks like it might have worked.
+
+- add new Tk functionality?
+    - text widget
+        - dump
+        - mark next/prev
+        - dlineinfo
+    - menu
+        - transient
+        - tearoffcommand
+    - entry
+        - bbox
+    - Tk_RestrictProc
+
+- change names to fit:        (see changelog)
+     get-x/char
+     get-width/char
+     move-y/char
+
+- fix text problem:
+     was trying to make it possible to compose selection extensions done
+     with mouse or keyboard, broken right now
+       see proto.ss and listbox.ss
+
+- fix the move-to-left method of text widget
+
+? should proto.ss not (clear-selection self) when other key is pressed?
+  (could move the clear-selection into the insert method, but that may
+   allow different forms of selection that we didn't want (eg. control-A
+   while range is selected))
+     - fix listbox.ss key-press method if we decide this
+
+- replace string->color with something that uses
+     string->number string radix  instead of my special purpose thing
+       - slight pain in butt, don't know a priori what substring sizes to yank
+
+- obvious optimization for object system:
+     - when there are no public methods, reuse base class dispatch table
+
+- maybe tcl-eval should be a macro (find way to avoid rest interface)?
+- would be nice to be able to eliminate all the formats done in text.ss
+- why / have memory requirements increased!?
+   - inspector information could be the killer
+- rename the <entry> method (hscroll entry index) to something like
+  move-to-top so that it more nearly matches the text widget notion
+- fix bad documentation for move-to-top   since the last line in widget (or
+  others) can't be moved to top
+
+- fix arc-edit bug in automata demo (make two tms and it breaks??)
+
+- work in JohnZ's changes.  (see mail from Erik about bugs in that stuff)
+
+* what's in a name?
+    SAW  (Scheme Abstract Windows)
+    SWIG  (Scheme with interactive graphics)
+          "to drink in long drafts," (not unlike swill)
+    SWAT  (Scheme windows are terrific)
+    SWIFT (Scheme windows in fine trappings)
+    SWIRL (Scheme ????)
+    WASH  (Windows and Scheme, Hot!)
+
+(define handle
+  (let ([fp (foreign-procedure "name_to_window" (string) unsigned-32)])
+    (lambda (win)
+      (let ([sp (open-output-string)])
+        (send win scheme->tcl sp)
+        (fp (get-output-string sp))))))
+
+
+* Wally called  May 3, 1996
+    - When building SWL (which saves a heap) load-foreign fails because
+      it runs out of memory.  Rearranging the file avoids the problem.
+      (added more stuff to the file at some point and found that caused
+      the problem, so move the load-foreign earlier in the build)
+    - Having problem with saving heaps on their machine (which doesn't
+      support mmap).  He's building a level 0 heap into the executable,
+      but it won't let him save a level 1 heap after that (system demotes
+      it to level 0).  Wants to be able to mothball all the common stuff
+      in lower level heap.
+    - They're going to need the menu and listbox support very soon.
+    - foreign.c and sel.c need function decls to look like ancient C
+      (rip off Kent's macros for that)
+    - More detail on the drawing speed problems.  Speed is slow relative to
+      low-level X code.  Example that may illustrate the case:  multiple
+      levels of cascaded menus with lots of items on them.
+    - Need to figure out how to drop unused Tcl code in /usr/local/lib/tcl/*.tcl
+
+* should tell Wally that load-foreign is useful for development, but will
+  bloat the image if used in production (use custom or load-shared-object)
+
+- shouldn't need the weak-cons of instance in insert-widget since we're
+  going to register it with a guardian anyway.  If we cut that, we need
+  to provide some way to trash the lookup-widget table entry for that
+  widget (ie. don't blast the handle field of the instance in destroy
+  method -- or have a really-destroy method that the collect-request-handler
+  uses).  Actually, we probably no longer need the guardian (since toplevel
+  windows are sticky).
+      
+- fix the stupid *&^@!# Makefile  (no longer need the swl.$m guys since all
+  should use the xscheme bins)
+
+- need to get to point of having working demo release tagged somewhere
+- consider the delete-char delete-line stuff down below somewhere
+   - damn names inconsistant with *-row *-col
+- verify that the "send" security hole feature of Tk has been plugged
+
+sticky / padding / etc become widget options (how to separate these from
+  the placer options)
+
+(nah) ask Tk news group about intended
+ - interactions between grid and place
+   (grid and pack can obviously get into trouble)
+      - looks like place should be safe because it doesn't try to change
+        the geometry of the parent window (which would cause the loop)
+ - if it's not going to work, then go for
+   two kinds of frames:  place and grid
+
+make insert-item 3-d to preserve declarative nature?
+   raise foo bar  raises foo above bar
+
+Note: to get around the lack of explicit size setters for windows
+  - insert them in frame and set the size of the frame (make window fill)
+  - or use placer and set their -width explicitly
+  - or provide the foreign entry for Tk_Resize, and write our own
+    geometry manager  that could be cool.
+
+* need to provide (in apps/common ?) a text-widget -> generic-port
+  mechanism  (not sure how full featured it needs to be)
+
+* Fix the weird initialization bug where wish works but SWL doesn't
+  (would be scads easier if I could actually duplicate it, try non-cs machine)
+
+* investigate strange bug possible if you repeatedly paste into a
+  cut and paste zone in a <text> widget.  basically it keeps growing
+  the paste region until it blows the process somehow.  is this a Tk bug
+  or an X bug?
+
+* cut and paste
+    - paste feel is limited by bug in Tk or my understanding thereof
+       - widget's selection doesn't persist beyond button 1 click
+          - can't select, then click button 1 to choose where to paste
+          - middle button release pastes at the current mouse position
+          - maybe need to investigate "selection handle proc ..."
+    - slection isn't presently cleared when cursor/movement keys are used
+      in <text>, but it is cleared in <entry>  ... need to decide which
+      makes most sense
+
+* geometry management
+    - could roll our own with
+        Tk_NameToWindow(interp, argv[2], tkwin);
+        Tk_MoveResizeWindow(Tk_Window tkwin, int x, int y, unsigned width, 
+                            unsigned height);
+        etc.
+    - want to make the placer functionality available, too,
+      but that's going to take a lot of design work.  One thing
+      that really sucks is that in vanilla Tk there's no way to set the
+      width/height of a non-frame / non-canvas widget independent of the
+      geometry managers
+        - how can we factor the geometry management stuff between the widget
+          and the external geometry manager?
+            - width, height, padding, seem like widget attributes
+            - expand / fill / sticky kind of seem like geometry manger things
+    - grid insights
+        - row/column need to have non-zero -weight value for things like
+          text widgets to be resized to fit their parcel (instead of clipped).
+            - make weight 1 the default
+            - if weight is 0, unfortunately the rest of the grid can be
+              clipped because one widget hogs all the available space.
+        - should be a set of methods on container-widgets
+            - this is great, because certains frames may want to enforce
+              a particular geometry on their children (eg. scrollframe)
+            - this is also a bummer, because then people have to know
+              the gory details of the grid geometry manager
+            - the sticky property should fabricate 'center option.
+        - padx pady are useful,  ipadx ipady may be useful too
+        * Tk 4.1b1 currently has limit grid size of 128 (gross) (seg faults!)
+          [may have changed in newer Tk's]
+        - pack isn't needed
+    - when a text is resized by the geometry manager, it's notion
+      of # rows / # columns is, unfortunately, not changed.
+         - could compute actual # rows/cols visible from index of
+           things at top and bottom of window?  only matters for
+           <text>, what about <listbox> ?
+    - since geometry managers don't compose (at least in Tk)
+      we need to ensure that only one manager is used for a given
+      geometry master.  I can generate ugly loops that hang Tk or
+      bomb with arithmetic overflow by mixing pack and grid.
+
+* design issue:
+    - problem for <markup> <mark> <canvas-item>
+
+    Canvas items and marks within a text are examples where we have
+    two kinds of functionality:  some inherant to the canvas-item or mark,
+    and some that requires cooperation of the canvas or text widget.
+
+    these things are kind of sub-objects.  places where an object gives
+    out pieces of itself.  (suggests the capability solution)  but what
+    if we want to sub-class these sub-objects?  ie. derive an asteroid
+    class from the rectangle class.
+   
+   - The way I'd originally chosen to communicate the capability from
+     parent widget to child (in the case of <mark>) was to make creation
+     of marks a function of the text widget.
+   - The other alternative is to have a secret-public method on parent
+     widgets for requesting capabilities.  Calling these things capabilities
+     is probably a bit much.
+   - <mark> instances are returned by the <text> widget when we called
+     the <text> methods fixed-mark or fluid-mark.  Unfortunately this
+     doesn't let us sub-class <mark>.  (For marks it's no big deal,
+     but if we want to adapt this solution to canvas-items, it's a
+     bummer.)
+   - could do things like:
+       (send canvas create-a
+         (lambda (canvas capability)
+           (create <rectangle> canvas capability ...)))
+     that feels strange, though, since anyone could obtain the capability
+     by calling the create-a method with (lambda (ignore x) x)
+
+
+* SNAPSHOT for
+   Abstrax, Jean-Pierre Herbert, sjohnson, and jashley, guys at MIT?
+   - get tk built (sun4?) for sjohnson
+
+
+* Need to work out <text> mark issues:
+   - bad error message if you try to (apply-markup  markup non-text ...)
+     need to check for isa? text first.
+   - probably should provide method for asking what markups apply at a
+     given position of the text widget
+   - seems strange that mark gravity affects insert but not delete.
+   - gravity left/right is really important
+   ? when abstracting 'end, hack it so that get-string avoids the final newline
+   - change [delete (index) ...] so that it rejects 'insert
+     and make it do something like  (?)
+       (delete-char txt -3)
+       (delete-line txt 23)
+
+* Cleanup
+    * get rid of option-value hackery (grep for it)
+    * fix parent-eval stuff done by canvas-item et. al.
+       ? try making it more like the capability model used by <mark>
+    - why did I not inherit the children ivar when defining <canvas>?
+        - see also modification to base1.ss destroy process where we
+          ingore both destroy and disown events once destroyed.
+
+? modify object system to make delegate explicit instance variable
+  where the default is the base class's dispatch table
+   - delegation would be useful for fileview stuff and for stuff Erik is doing
+
+* fix documentation
+   - One of these days I need to clean up the documentation
+     compiler to the extent that we can simply use it instead
+     of Scheme to compile the swl sources.  (eg. Make Scheme=dc)
+   - labels multiply defined warnings
+        - lots more work involved in generating a useful index
+        - refs in mouse-* methods seem foobar
+   - pretty-print stuff wasn't showing up, hacked it for now
+   - diff versions of macros should be defined in the SWL source, not the
+     documentation compiler.
+        - ideally we'd have a language for defining the dc version of macros
+          and the manipulation functions that munge them and produce output
+   - dc should (load file eval) instead of (load file expand)
+     so we can evaluate things that affect dc without making them macros
+
+* fix Makefiles so that .o files get built right.
+    - sel.o doesn't get rebuilt right when switching arch's
+    - dump one heap, not many?
+    - compile .ss files such that make only rebuilds those that change?
+
+* fix performance bug w/ canvasitem event handling
+
+   * implement image support
+       - flesh out manipulation features, etc.
+       - see docs in FindPhoto.3 for C interface
+   * fix comments in canvasitem.ss
+   - make a pass at listboxes?
+   - prevent Tk from loading all the Tcl binding stuff (trim process size?)
+   - tutorial for <markup>
+      (for now apps/repl/repl-port.ss may have to suffice)
+
+  * look at object sytsem comments in apps/common/flex-text.ss
+      - should we keep the flex-text notion or insist on new classes?
+  * see comments in markup.ss about fixing event stuff to work more like
+    canvasitem.ss  (partially done?)
+  * consider changing it so that objects can be interactive or not
+    where those that don't want to be interactive can change their bindtags
+    or retract bindings if <markup> or <canvas-item> (by default those guys
+    would be non-interactive) to make them interactive, reverse the process
+      - for-example, we appear to get a hard loop from the following:
+     (send self set-mouse-press-method!
+       (lambda (self x y mods)
+         (event-case (modifier= mods)
+           (([middle-button])
+            (set! ox x)
+            (set! oy x)
+            (select-vertex graph self))
+           (([right-button]) (destroy self))
+           ;; hard loop in else clause due to object-system problem?
+           ;;  perhaps need a way to say (send (base self) mouse-press x y mods) ?
+           (else (send-base self mouse-press x y mods)))))
+
+* document
+   - object system
+   - design curiosity of <markup> that means we can't
+     simply sub-class the event-methods and have anything happen (because
+     we create Tk bindings for them lazily for efficiency)
+
+* BUG:  object system send-base for protecteds is broken, should check to
+  see that we're sending to the correct object class
+     * design bug:
+         can't send-base to a protected we've redefined
+         because the slot in our protected dispatch table where
+         the base class's protected would live has been filled with
+         our version.
+         Could get around this by keeping extra pointer to parent table.
+         gack.
+
+* continue Abstraction of <entry> and <text>
+    - I've already provided a set of cursor manipulation routines
+      (cursor-eol, cursor-bol, move-char, etc.) that
+        - move the cursor
+        - ensure the cursor is visible
+        ? could also clear the selection if present
+        ? could add things like delete-char delete-line
+      
+* <flex-text> <markup>
+    - how is inheritance / dispatch going to work out?
+
+Current:
+  - listbox
+     - event stuff
+     - selection stuff
+  - <menu>
+     - selected item doesn't always keep up w/ mouse (see JohnZ for example)
+       (happened in his help menu)
+     ? what happens when we try to post a cascade too close to the rhs of screen
+     - need kbd traversal stuff too
+     - bug when menu doesn't post directly beneath the button (due to
+       window-manager (or Tk?)) need to compute offset more carefully.
+     - make index stuff work right
+     - see other stuff down in the Event section
+     * important: see warnings in /usr/local/lib/tk4.{0,?}/menu.tcl
+       about things that have to be done to prevent goofy window managers
+       from screwing things up
+     - looks like the menubutton is currently responsible for unposting
+       the menu and sub-menus 
+  - <markup>
+     - need to enable the event method stuff for markups
+     - update documentation
+     x check to make sure the text widget is still alive before manipulating
+       the tag associated with a markup
+     * major bummer in that get-tk-option has no good way to return default
+       <text> attributes for whatever unless it creates and drops an instance
+       of <text>.  This will all change once all objects are on the Scheme
+       side and no default attributes are determined by Tk, whenever that is.
+  - text
+     - selection stuff
+  - update documentation
+     - markup
+     - HTML backend
+
+Event:
+  - event method support in <canvas-item>:
+      - performance problem:  try apps/graph/graph.ss and try moving a node
+        with lots of edges vs. one with few edges.  It's almost as slow now
+        as it was with the old object system (very slow).  I'm assuming part
+        of this is the fact that the callback no longer closes over the
+        current-widget and so has to do a computation to get it.  But I've
+        got caching stuff in there now ... still slow.  But maybe I wasn't
+        trying this with threads before?
+  - add the callback-list stuff that Wally wanted
+     - see proto.ss proto-button, this basic issue must be dealt with for all
+       activatable widgets, while we're at it we can add the callback stuff
+  - update canvas.ss tutorial (perhaps split into two tutorials, one that
+    forks a thread to draw stuff to the canvas, and one that shows how to
+    subclass things to define your own behaviors)
+  x finish off the add-modifier cancel-modifier stuff un event.ss
+  - seriously consider renaming prior/next to page_up page_down
+  - need to decide what to do about Alt / Compose on funky keyboards like
+    Sun and Alpha, or maybe do it differently from PC keyboard.
+  - fix the stupid hscroll vscroll mechanism extra / optional arguments junk
+  - fix the focus mechanism
+     - if container widget doesn't actually show focus (eg. a frame) then it
+       should set focus to one of its kids   else not accept focus
+     x container widget needs to know when all it's kids have had a shot at
+       focus and then try to send focus on to it's siblings within its parent
+     x make focus-prev / focus-next take arg.
+  - <button> <radiobutton> <checkbutton>
+      - key-press / release of return or space should forge
+        a mouse-press / release pair of events for that widget
+        (so we get the visual feedback)
+      - get rid of the prop-set! for old-relief and make it
+        a regular ivar since any button that the mouse enters will
+        have the property, and we might as well make it fast
+      x double and triple clicks should do the right thing
+  - <scale>
+      - is the fn passed to small-slide / big-slide useful?
+          - certainly convenient in the scale.ss code to send in + or -
+          - can we instead pass in constant in scrollbar.ss code or is there
+            some inherited code that will be sad then?
+      - fix the get-length get-width things to work right
+      - for complete Tk compatibility, should clone scale button 2 bindings
+      x autorepeat when button pressed in trough
+      x small-slide & big-slide should set to max/min of sum and to/from
+      x implement small-slide
+      x need keybindings for bigslide and small slide
+  - <scrollbar>
+      - if we get a set-view! message when there is a drag procedure,
+        we should reset the drag procedure, same for scale (ie. proto-slider)
+      - when jump scrolling is enabled, we should prevent scrollbar from moving
+        beyond reasonable range
+  x <listbox>
+  - <menubutton>
+      - still need to make it post when mouse enters as a drag from another
+        menubutton
+      - should leave menu or cascade posted when we get the button release and
+        the mouse is over the menu button or over the cascade item
+  - <entry>
+      - manipulate selection:
+          x drag shift left-button to sweep out regions, and scroll if needed
+          x press shift left-button to adjust selection 
+          - these select modes affect the behavior of mouse presses and drags
+             - double click prefix to set word select mode
+             - triple click prefix to set line select mode
+             - abstract these so that subclasses can change the way selection
+               works (eg. select by s-expression)
+          - key-press
+              - shift/control left right   shift home end
+      - move-word, transpose
+  - <text>
+      - abstract <entry> code to <proto-editable> to be shared with <text>
+      x the simple cursor methods:
+          [insert (char) ...]
+          [move-char (offset) ...]
+          [move-line (offset) ...]
+        now automatically make the cursor visible
+      - document the change in simple cursor methods
+  - <canvas>
+      ? currently pays no attention to scroll increment stuff (see canvas.ss)
+  - canvas-items <rectangle> <oval> etc.
+  - document the new methods in base2, etc.  have a partial start on this
+  * event-case
+      - eliminate gross constants in init.ss, event.ss
+      - do better job of documenting event-case.
+        current behavior:  pattern matches any event with at least the
+        same set of modifiers.
+        it used to be exactly the same set (except for no modifiers).
+        this is now more consistent.  have to put most specific first.
+          - one problem with this is a case where a sub-class wants to
+            specialize a method for a more general input than the superclass.
+            (suppose sub-class wants to alter superclasses understanding of
+             left-mouse press without changing super's more specific
+             control-left-mouse press semantics)
+      - add keysym mapping for stuff on numeric keypad
+        /usr/include/X11/keysymdef.h
+      - make event-case compile to more efficient code, or fix compiler to do it
+      ? provide more interesting ways to specify ranges of chars
+      x need to be able to construct modifiers, do modifier-eq?, etc.
+        (for passing fabricated/altered events along)
+      x add modifiers, x, and y to mouse-enter mouse-leave
+      x add something for Double / Triple mouse click
+      x add keysym mapping for backspace
+  + could modify class system so that we can have a class-init method that
+    runs when the class is first set up.  Here's what I want to do with this:
+       when a class is initialized, it checks to see which of the
+       event-notify methods it has and then arranges for its instances
+       to use a bindtag that has bindings for only those methods
+  - do binding stuff for canvas items
+        (maybe separate class of Active-*)
+  - for KeyRelease of things like Control, we'll get (control_l . control)
+    need to document this (makes sense, the modifiers only show up once
+    the event has been added)
+  - hacked mouse callbacks to try to include the which-button info in the
+    modifiers bitfield we pass, need to test this to make sure I didn't
+    screw up the button release events -- we may be missing precisely the
+    button number info we need  (can be fixed w/o too much trouble)
+
+BUG
+  - Check into possible confusion w/ Enter/Leave events when a frame
+    contains several children.  (may need to check %d != notifyinferior)
+  - insert-off-time insert-on-time stuff will be kind of broken because
+    Tk's after doesn't get a chance to run if we're doing a long-sleep select
+    (because it doesn't generate any activity on the X-socket we're selecting
+     on)
+  - fix the stupid menu.ss code to deal with Tk's brain damaged indexing
+    scheme where the tear off bar is at position 0, otherwise the first
+    menu item is at 0
+  - fix the stupid bug in proto.ss where show-released is called only
+    if the button is enabled.  (someone could change the state while the
+    button is down)
+  - get rid of the 50 in fork-scroll in entry.ss  (it's the delay parameter)
+  - should be able to give list of points to multi-point objects
+  - set-length! method on scales should make sure slider-length is sensible
+    (else we can get bizzare behavior)  Either that, or fix the set-drag!
+    method to be more careful.  Also should watch for side effects.
+  - can't set-height! or set-width! a textual widget (actually, might be
+    able to pull some stunts using geometry managers or a frame around it)
+  - y->index on listbox will give -1 if out of bounds
+    x->index on entry probably hosed similarly
+  - get-item on listbox probably does something stupid when out of bounds
+  x tk->color on "" fails.  (get-fill-color (create <oval> canvas 10 10 30 30))
+  x canvas (and others?) get-height and get-width don't reflect true size of
+    the widget
+      - seems totally bogus to have them returning 0 when they're sizing to
+        fit the parent.  sometimes you want to know what the height really is.
+      - see changelog
+  x can't write a method to be called when something is resized.
+    see new configure event
+  + using scrollframe.ss.NEW in fileview, it's possible to scroll so that
+    just the very last line of the display is too wide.  this causes the
+    frame to try to add scrollbars, but that causes the line to be displaced
+    so the scrollbar isn't needed, and then we take the scrollbar away, but
+    then it's needed.
+        ==> maybe scrollbars should be added when there is any line
+            over the available width, even if it's not visible
+        ==> one problem is that the size of the text shouldn't be affected
+            when the scrollbars are added.  (though I can imagine cases where
+            you don't want the window to grow when scrollbars are added)
+        ==> there needs to be some form of hysteresis
+  - takes forever to kill the plot.ss demo after having viewed tons of data
+    (all those canvases lying around chewing up memory and all the canv items)
+  - fix the selectbox.ss code [totally bogus interactions possible when base
+    delete method is used instead of the class level one, basically totally
+    bogus]
+  x pie-slice bug from wally, see mail from carl
+
+
+* Important task:
+    - fix race conditions.
+    - decide on good way to deal with collector
+        - avoid space leaks
+
+
+* Need to document the fact that destroy should be last thing done to widget:
+      ...
+      (destroy self)
+      (call-a-protected-method self)
+      ...
+  this error won't be flagged, but subsequent public method calls will be
+     - this may not be sufficient for buggy programs that define a class that
+       forks threads to manipulate its state via protected/private methods
+       but again, such code is buggy if it doesn't kill the thread when the
+       widget is destroyed
+
+
+Important change to be made:
+  - see mail from Carl for another summary of this
+  - a process consists of two threads:
+      one evaluates the usual code, and one waits on a message queue
+      for callbacks to evaluate
+        - when threads are forked they can inherit the message queue of parent
+        - when process is forked it can forge new ones
+  - (define process-fork
+      (lambda (thunk)
+        (let ([cb-msg-q (make-message-queue)])
+          (thread-parameterize
+            ((callback-message-q cb-msg-q))
+            (let ([callback-thread
+                   (thread-fork
+                     (lambda ()
+                       (let loop ()
+                         ((thread-receive-message cb-msg-q))
+                         (loop))))])
+              (thread-fork
+                (lambda ()
+                  (thunk)
+                  (when (message-queue-empty? cb-msg-q)
+                    ";; also need to wait until all the widgets that
+                     ;; care about this msg-q are destroyed"
+                    (thread-kill callback-thread)
+                    (set! cb-msg-q #f)))))))))
+  - the tk-widget base init method becomes:
+     [init ignore-args
+      (insert-widget handle self)
+      ;; record the callback message queue of the current thread in an
+      ;; instance variable.  This also needs to bump up the reference
+      ;; count (don't want to have too many huge [and weak?] lists around)
+      ;; for this message queue so that he doesn't exit unless no one
+      ;; would mind
+      (set! cb-msg-q (callback-message-q (thread-self)))
+      (set-accept-focus! self #t) ;; make keyboard traversal possible
+      (tcl-eval 'bindtags handle '|SWL|)
+      (when parent (send parent adopt self))]
+  - (insert-widget handle self) which is called in the init method, now
+    stashes away the widget *and* the current thread's message queue
+    in the widget table
+  - in principle, callbacks for core event-methods are changed to look like
+      (define mouse-motion-callback
+        (callback-lambda (widget x y state)
+          (thread-send-message
+            (callback-message-queue-of widget) ;; actually done by cb-lambda
+            (lambda () (send widget mouse-motion x y state)))))
+  - since that could lead to lots of context-switch overhead
+    and closure allocation, what we actually do is make the X thread
+    preemptable with the standard time quantum and change the X thread's
+    timer-interrupt handler so that when it's quantum expires, it grabs
+    a continuation, wraps it to exit when done (instead of continuing the
+    event loop), stashes the continuation on the callback-message-q associated
+    with the original callback request it was processing, and continues.
+
+    The idea is to make the thread creation and message-q creation (shown in
+    process-fork) lazy, and avoid the closure allocation in the event-method
+    callbacks.  We could also to modify the (do-event) code so that it always
+    passes the affected widget as one of the arguments as I've implied below.
+
+    (define thread-x-eventloop
+      (lambda ()
+        (let ([the-widget #f] [thread-reset-x #f])
+          (thread-parameterize
+            ((timer-interrupt-handler
+               (let ([default-timer-interrupt-handler ...])
+                 (lambda ()
+                   (call/cc
+                     (lambda (continue)
+                       (thread-send-message
+                         (callback-message-queue-of the-widget)
+                         (lambda ()
+                           (thread-parameterize
+                             ((timer-interrupt-handler
+                                default-timer-interrupt-handler))
+                             (continue)
+                             (thread-exit))))
+                       (thread-reset-x)))))))
+            (call/cc (lambda (k) (set! thread-reset-x k)))
+            (let loop ()
+              (call-with-values
+                (lambda () (do-event))
+                (lambda (fallback-id widget args)
+                  (if fallback-id
+                      (begin
+                        (set! the-widget widget)
+                        (apply-callback-proc
+                          (lookup-callback fallback-id) args))
+                      (thread-yield))
+                  (loop))))))))
+
+
+New features to consider
+  - we may need some protocol for event propagation from container-widgets
+    to their children.  not sure how to go about this yet
+  x see mail from wally, and my reply
+  - remove the xy->widget procedure if not needed (base2.ss)
+  - perhaps revive that idea about an attributes object that can encode the
+    display parameters (possibly others) for a widget
+      - this might avoid the need for this option database stuff that Wally
+        wants (shouldn't have to name the widgets, that's just too gross)
+      - it could be one-shot only at widget create time, or there could be
+        a link so that attributes apply to all instances with this property
+        and then you could update the structure and the change would be
+        reflected elsewhere
+  - should <entry> support (by ignoring) vscroll methods?
+  - to avoid annoying line redraws in Text widgets:
+          (made this the default)
+      The display line with the insert cursor is redrawn each time the cursor
+      blinks, which causes a steady stream of graphics traffic.  Set the insert-
+      OffTime attribute to 0 avoid this.
+  - would be interesting if we could send mouse events to the dispatcher
+    for a particular widget (this would basically be a Scheme-side grab)
+      - mouse-motion would be automatically scaled to account for relative
+        positions of the widget that was trying to forward events.
+      - mouse-motion that crossed widget boundaries would generate enter/leave.
+      - probably easier overall if we just use Tk's grab mechanism.
+
+Gripes about Tk
+  - no underlying drawing model (can't draw widgets ourselves)
+  - monolithic widget structures
+  - geometry management headaches
+
+Performance
+  - It may help to introduce some form of buffering on the Tk command port.
+      - could make the Tk port a thread parameter to avoid critical sections
+        or premature flushing
+      - if difficult in the general case, likely doable in the special cases
+           - "create" macro
+           - "set-grid-item!" and other grid operations
+  - prop-set! / prop-ref / need some way to drop properties when you're done
+      - see proto.ss show-released
+  x modify object system to permit changing the dispatch table (since it's
+    just an instance variable)  this will let us eliminate all the checks for
+    dead widgets and such that are currently bloating the code, while retaining
+    some measure of safety for optimize-level 3 stuff
+      This could be as simple as making the base object class have a destroy
+      method that bangs on the instance's table.
+       (first-class dispatch tables?  basically need to know geometry)
+  x do the mapping from .w.4.5 things to widget using system-value slot of sym
+       \#system-value
+       \#set-system-value!
+  - Lou and Wally concerned about menu draws not being double-buffered.
+
+
+Threads
+  - thread-enable-preemption currently restarts timer with a full time quantum,
+    would be nice if it restarted it with whatever time remained when preemption
+    was disabled.
+  - eventually keep track of sstats for thread code
+      - give more accurate sstats info for (time (f)) in a threaded system
+      - if we do this, we may be able to use the real-time info from the sstats
+        struct instead of making another C call
+      - implement a Scheme "top" thing
+  - need thread variables instead of thread-signal stuff
+  - instead of banging on states in pcb, theads should wait on appropriate
+    queues (eg. ready, running, sleep)
+  - thread-start shouldn't have to loop to find a runnable thread
+  - thread-sleep should put the thread on a (priority) sleep queue
+      - thread-sleep-handler should be looking in the priority sleep queue
+      - looks like we can do this w/ delta-time priority tconcs
+        (tconc is what I did in my queue)
+  - why use doubly-linked queues?  put link fields in pcb (eureka)
+  - thread-do-select seems to be looping through all fds before even
+    calling select, why?
+      - quiescent system check may be broken (<= 2) ?
+      - looks like thread-yield in the quiescent system case needs to be
+        only on the non-sleep-delay branch of the if
+   
+* at some point we shuold make an interface builder.
+
+Tk 4.1 --------------------------------------------------------------------
+  - uncomment code in set-slider-relief! in scale.ss or proto.ss
+  
+Soon
+  - is the number? case in generic-scheme->tcl (tkstream.ss) working for us?
+    (eg. we should be able to send ratnums to almost anything)
+    (actually, if they're bignums or complex we're probably screwed)
+  - provide access to the placer, use this to fix the scrollframe example
+  - test the idea of notify methods for event handling
+  - maybe implement the vbox hbox stuff using place  (if we can figure out
+    a good interface)
+  - implement a stacked frame notion where you can pop something new to
+    the top of it.  this can be done via place.
+  - maybe implement reparenting
+
+* canvas
+  - changing format of children var is a bad idea, fix it.
+     - still need some kind of assoc table to relate stupid tk id number with
+       kid
+
+* apps
+  - graph
+    - unsafe to do add-edge and del-edge given threads (thread-critical-sect?)
+  * examples for EI guys downstairs
+    - finite automata demo
+    - tic-tac-toe interface
+
+
+* compare heap sizes with this version of SWL and the last...
+
+* Threads
+    - need better performance for things like (load "huge-file.ss"), esp
+      when there's nothing else going on
+    - improve response time for things like fileview.ss searching around
+      when you don't have any other threads running...
+         example:  hit the n key to continue a search for something that
+                   is off the screen and it doesn't bother to update display
+                   to make the new thing visible (even though there's code
+                   that should be doing that)
+
+* Documentation
+    - need to do something clever about the makeindex stuff that's automatic
+      with latex, not sure how it's going to work for HTML
+    - need to fix the [] stuff that the post-processor is hacking in \item[]
+    - add an @ref{} keyword to the documentation language so we can build
+      more useful cross-references.  need to have some way of setting these
+      marks as well @label{}.
+    - might be nice if there was some way to specify inheritance of the
+      documentation comments (also overriding)
+    - update makefile so that it can regenerate the documentation when
+      creating a new release
+    - extend tool so that it understands enough to generate pretty tspl2-style
+      documentation.  we'd like to be able to show the syntax for macros a
+      bit easier, etc.
+    - add HTML backend to ../dc stuff because LaTeX2html does weird
+      stuff with the index and with the tutorial section
+    - make dc an app in its own right
+    - go through the tutorials again and make sure the documentation
+      matches the function
+
+* object system
+   - very annoying that we can't define macros within the scope of the
+     class that span all the methods / ivars regions.  (what you have to
+     do is define the macros within each method that wants to use it, gack)
+       - for example, trying to define a push! macro that expands as:
+           (push! foo value)  ==>  (set! foo (cons value foo))
+         is problematic because set! is introduced within each of the method
+         bodies.  I don't think it has anything to do with the ivars (foo)
+         being macros, but that could also be a problem...
+   - see ./apps/graph/graph.ss for comments and examples of things that
+     might be nice to fix about the object system
+   - annoying to have send-base and send-apply
+       - missing send-apply-base
+   - fix misleading error message when input class contains duplicates like:
+       ...  (protected [foo () ...] [foo () ...])  ...
+   * should make publics act like generics within method bodies?
+   - should define the create mechanism for an object as an integrable
+     procedure so that folks could pass classes around and the make macro
+     could do the right thing with it magically.   Useful for things like:
+        (send graph plot <point> x y)
+   - provide nice error messages for syntax errors like missing formals
+   - hack support into pretty printer
+   - could we change the way "make" behaves on a per-class basis?
+     seems we could because it's just syntax
+   - revisit the rest-args change (nuke build-application?)
+   - make sure the compiler is generating good code for
+       - lots of lets that can be copy propagated
+       - rest-arg interfaces deep inside a dispatch-table form
+         where the rest-arg is ignored
+
+* paren balancing
+   ? go through generic port??
+   - forward:  just use Scheme read on the generic port
+   - may be able to reverse scan Scheme code in a buffer with some success
+       - scan backward from the right paren
+       - keep tentative count of paren balance and a current count of
+         paren balance:  if hit beginning of line before finding a ';'
+         then include the tentative count and continue, else use current count
+       - when you find the apparently matching paren, keep scanning for
+         beginning of line to prove that there is no comment on the line
+       - if you find a #\" then you have to do something more costly
+       - if you see a #\\, could ignore the last change to counts,
+         or the whatever that we do for #\" or be more
+         careful and verify it's a character
+       - have to watch out for stuff like:
+           (\#1#(a))    ==>  (|#1#| (1))
+
+* make sure we abstract when doing stuff with the fancy text widget junk
+  either abstract at the low level or in a layer on top of it.
+
+* hbox & vbox
+
+* event handling
+   - In building large systems it may be useful to be able to get the
+     system bindings for some things so we can essentially subclass certain
+     events and pass them along to the system after having processed them
+     ourselves.
+       - No good way to do this in Tk:  trying to package up system event
+         bindings as Scheme thunks that tcl-eval the event script doesn't
+         work because of the need to substitute in the %W kinds of stuff.
+         This means we can't fabricate events because we can't (sans hacks)
+         substitute the right stuff into these Tk scripts.
+   - Have methods on widgets that get called to notify us of events.
+       - keyboard-event, mouse-event, window-manager-event
+         (need press and release events or more stuff in event-case)
+       - event-case macro
+           ? need standard event record that things get barfed into so that
+             this one macro can handle kbd, mouse, and wm events
+           ? can be clever and snarf out only those fields of the Tk event
+             that actually are needed for the particular dispatch
+             (we might be able to do the conversion from Tk to Scheme datum
+              lazily in the event-ascii-value, etc. accessors)
+           - compile to efficient pattern matching stuff for events
+               - merging tests when they're looking to do one thing when
+                 mouse button 1 is down, and another when it's double-clicked,
+                 or when shift is held down
+           - could have syntax support for cool things like
+               - match any ascii char in this range, or anything but these
+               - modifiers like double-click or control alt shift
+               - special keycodes like left right up down page-down, etc.
+           - to handle modifiers like double, control, alt, shift, we can
+             add Tk bindings specifying <double-buttonpress> and <shift-any>
+             and have these bound to scripts that pass along an extra piece
+             of information like 'double or something.
+                 (event-case evt
+                   ((#\a - #\m #\G - #\Z) () ...)
+                   ((control #\c #\d #\e) (key) ...)
+                   ((shift alt) (modifier) ...)
+                   ((double-click 1 2) (button) ...)
+                   ((movement 3) () ...)
+                   ((release) ...))
+
+
+* should verify that parent is a legit parent (isa container widget?)
+  [base2.ss]
+? should we implement set-parent! to make vbox/hbox work?
+
+;; Notes from the guys AbstraX
+
+don't forget to respond to requests...
+
+  - caching of configure stuff
+  - if we end up needing scads of performance can investigate Rivet pure C
+    interface to Tk  -- not clear if Sun is going to pick it up
+  - also waiting to see what happens w/ Java's AWT
+
+  as far as featuritis goes, want to evaluate current Windows NT Tk port
+  before getting too deep into X-ish hacks
+    - sounds like font handling should still work
+
+;; 
+;; * trouble building load-foreign version of SWL that was a linker problem
+;;   no idea yet why, but it has something to do with the Tk and Tcl entries.
+;;   When Wally ifdef'd them out it loaded fine.
+;; 
+;; x use "$@" instead of $*  in scripts
+;; 
+;; x 14 character filename limits
+
+ ; More notes from AbstraX:
+ ;  Here are some bugs and ideas for swl:
+ ;  
+ ;  1) Need full access to all Tk command options, not just sub sets.
+ ;     pack and place for example.
+
+ * working on this, but trying to avoid total Tk-ness
+
+ ;  
+ ;  2) Need full access to Tk menu widget and all commands.  You can leave
+ ;     convenience functions around but don't cut us off from the
+ ;     underlying methods.
+
+ * working on this, too, but trying to repackage so it's more uniform than
+   the way it's done now.  menu is essentially a special kind of frame.
+
+ ;  
+ ;  x  tk->color does not work for X rgb file color names like "blue".
+ ;     Gives the following error.
+ ;        swl> (tk->color "blue")
+ ;        Error in fx>=: #f is not a fixnum.
+ ;        Type (debug) to enter the debugger.
+
+
+ ;  x  mouse-cursors? does not allow '(), but tk->mouse-cursor returns it when
+ ;     the cursor value is empty.
+ ;  
+ ;  5) Options error checks should advance along the option list using
+ ;     cddr instead of cdr.  The macros pack, etc. verify that valid pairs
+ ;     were placed into the list.
+ ;  
+ ;  6) The pack and place methods should set the manager and manager-opts
+ ;     properties in the misc object variable.  The show and hide methods
+ ;     should use these properties if they exist and should not delete them.
+ ;     If no manager property is set show and hide should use pack with
+ ;     no options.  An additional manage method is required to set the
+ ;     manager and manager-opts properties but not invoke the actual manager.
+ ;     This allows a widget to be managed in the X sense, but not mapped.
+ ;  
+ ;  Feel free to call about any questions @(602) 838-4569.
+ ;  
+ ;  --
+ ;  Thanks
+ ;  
+ ;  Wally
+
+
+Note:
+ - Since class names are currently macros that expand into something,
+   and that all methods are defined inside the class expression makes
+   it ugly to forward reference them.  For example if you have a class
+   A and a subclass B (which needs to be defined afterward) it doesn't
+   work to have a method in A whose implementation needs to ask (isa? x
+   B).

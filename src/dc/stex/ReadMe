@@ -1,0 +1,91 @@
+The Scheme Programming Language, Second Edition
+Scheme and Latex Source Code
+Copyright (c) 1996 R. Kent Dybvig
+
+
+To rebuild this document, you will need latex2e, makeindex, bibtex, and
+a version of Chez Scheme that supports syntax-case (V5.0a or later).
+
+To rebuild the .dvi file, simply type "make".  This takes quite a while
+(around 15 minutes on a Sparc 1+).  Type "make clean" to eliminate the
+various products of latex, bibtex, and makeindex.  Type "make
+reallyclean" to remove these products plus the .tex files output by the
+Scheme preprocessor.
+
+Typing "make" causes the following steps to occur:
+
+  1. prep.heap is built from prep.ss
+  2. the stex files are converted into latex files using prep.heap
+  3. the first latex2e run is performed; firstun is touched
+  4. bibtex, makeindex, and summary.ss are run
+  5. the second latex2e run is performed; secondrun is touched
+  6. bibtex, makeindex, and summary.ss are run again
+  7. the third latex2e run is performed; thirdrun is touched
+
+Typing "make firstrun" causes only the first three steps to be
+performed; typing "make secondrun" causes steps 1-5 to be performed.
+This is useful during testing to cut down on processing time, if it is
+not necessary for all labels, bib entries, the summary, and the index
+to be consistent.
+
+The relevant source files are listed below:
+
+    Makefile             database for make
+    binding.stex         stex source for Chapter 4
+    control.stex         stex source for Chapter 5
+    copyright.stex       stex source for the copyright page
+    dedication.stex      stex source for the dedication page
+    examples.stex        stex source for Chapter 9
+    further.stex         stex source for Chapter 3
+    grammar.stex         stex source for the formal grammar appendix
+    intro.stex           stex source for Chapter 1
+    io.stex              stex source for Chapter 7
+    objects.stex         stex source for Chapter 6
+    preface.stex         stex source for the preface
+    prep.ss              the stex->tex preprocessor
+    start.stex           stex source for Chapter 2
+    summary.ss           sort routine for the summary of forms and procedures
+    summary.stex         stex source for summary of forms and procs appendix
+    syntax.stex          stex source for Chapter 8
+    title.stex           stex source for the copyright page
+    tspl.bib             bibtex format bibliography entries
+    tspl.bst             bibtex style file
+    tspl.cls             latex2e document class file
+    tspl.stex            stex source for the document "shell"
+    tspl10.clo           auxilliary to tspl.cls
+    pic/*                postscript for the chapter head illustrations
+                         and for the "butterfly" picture in Chapter 9;
+                         also .tex files containing brief captions for
+                         the illustrations
+       
+The stex preprocessor does the following:
+
+    * converts Scheme code bracketed by "\scheme{" and "}" into
+      something that latex can handle.  This is similar to verbatim
+      mode in latex, except that certain characters are handled
+      specially to produce more readable output.  Also, \var forms
+      (see below) are recognized within "\scheme{" and "}".
+
+    * converts Scheme displays bracketed by "\schemedisplay" and
+      "\endschemedisplay" similarly to \scheme forms, but with
+      explicit line terminators (//).
+
+    * converts pattern variables bracketed by "\var{" and "}" into
+      italics.  If the string bracketed by "\var{" and "}" contains an
+      underscore, the following character is converted into a
+      subscript.  E.g., \var{abc_3} is converted into the latex
+      equivalent \emph{abc$_3$}.  \var forms may appear both within
+      and outside of \scheme forms and Scheme displays.
+
+    * preprocesses \index forms to extract explicit sort keys and
+      produce explicit formatting commands if necessary.  See comments
+      under state s4 in prep.ss for full description of how \index
+      forms are handled.
+
+    * preprocesses \formdef forms to automatically generate form
+      headers, summary entries, and index entries.  See the comments
+      under state s5 in prep.ss.
+
+A new preprocessor that performs these transformations differently (and
+possibly performs other transformations as well) may be needed to suit
+the htx processor.

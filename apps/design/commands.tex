@@ -1,0 +1,187 @@
+%
+% Adapted from macros for R^nRS by John B. Zuckerman
+%
+
+\makeatletter
+
+% Chapters, sections, etc.
+
+\newcommand{\extrapart}[1]{
+  \chapter*{#1}
+  \markboth{#1}{#1}
+  \vskip 1ex
+  \addcontentsline{toc}{chapter}{#1}}
+
+\newcommand{\clearchapterstar}[1]{
+  \clearpage
+  \topnewpage[
+    \centerline{\large\bf\uppercase{#1}}
+    \bigskip]}
+
+\newcommand{\clearextrapart}[1]{
+  \clearchapterstar{#1}
+  \markboth{#1}{#1}
+  \addcontentsline{toc}{chapter}{#1}}
+
+
+
+\newcommand{\vest}{}
+\newcommand{\dotsfoo}{$\ldots\,$}
+
+\newcommand{\sharpfoo}[1]{{\tt\##1}}
+\newcommand{\schfalse}{\sharpfoo{f}}
+\newcommand{\schtrue}{\sharpfoo{t}}
+
+\newcommand{\singlequote}{{\tt'}}  %\char19
+\newcommand{\doublequote}{{\tt"}}
+\newcommand{\backquote}{{\tt\char18}}
+\newcommand{\backwhack}{{\tt\char`\\}}
+\newcommand{\atsign}{{\tt\char`\@}}
+\newcommand{\sharpsign}{{\tt\#}}
+\newcommand{\verticalbar}{{\tt|}}
+
+\newcommand{\coerce}{\discretionary{->}{}{->}}
+\newcommand{\okbrk}{\discretionary{}{}{}}   % ok to break without inserting hyphen
+
+\def\elem{\hbox{\raise.13ex\hbox{$\scriptstyle\in$}}}
+
+\newcommand{\meta}[1]{{\noindent\hbox{\rm$\langle$#1$\rangle$}}}
+\let\hyper=\meta
+
+\newcommand{\lambdaexp}{lambda expression}
+\newcommand{\Lambdaexp}{Lambda expression}
+\newcommand{\cname}[1]{{\sf $<$#1$>$}}
+
+%------------------------------------------------------------------
+%
+% mysterious stuff from the r4rs.
+%
+% \frobq will make quote and backquote look nicer.
+\def\frobqcats{%\catcode`\'=13
+\catcode`\`=13{}}
+{\frobqcats
+\gdef\frobqdefs{%\def'{\singlequote}
+\def`{\backquote}}}
+\def\frobq{\frobqcats\frobqdefs}
+
+% \cf = code font
+% Unfortunately, \cf \cf won't work at all, so don't even attempt to
+% next constructions which use them...
+\newcommand{\cf}{\frenchspacing\frobq\tt}
+
+% Same as \obeycr, but doesn't do a \@gobblecr.
+{\catcode`\^^M=13 \gdef\myobeycr{\catcode`\^^M=13 \def^^M{\\}}%
+\gdef\restorecr{\catcode`\^^M=5 }}
+
+{\catcode`\^^I=13 \gdef\obeytabs{\catcode`\^^I=13 \def^^I{\hbox{\hskip 4em}}}}
+
+{\obeyspaces\gdef {\hbox{\hskip0.5em}}}
+
+\gdef\gobblecr{\@gobblecr}
+
+\def\setupcode{\@makeother\^}
+
+%------------------------------------------------------------------
+
+% Scheme example environment
+
+\newenvironment{schemenoindent}{
+  % Commands for scheme examples
+  \newcommand{\ev}{\>\>\>\evalsto}       % three tabs
+  \newcommand{\wev}{\>\>\>\>\evalsto}    % four tabs
+  \newcommand{\wwev}{\>\>\>\>\>\evalsto} % five tabs
+  \newcommand{\lev}{\\\>\evalsto}        % one tab
+  \newcommand{\unspecified}{{\em{}unspecified}}
+  \newcommand{\scherror}{{\em{}error}}
+  \setupcode
+  \small \cf \obeytabs \obeyspaces \myobeycr
+  \begin{tabbing}%
+\qquad \= \hspace*{4.5em} \= \hspace*{4.5em} \= \hspace*{4.5em} \= \hspace*{4.5em} \= \hspace*{4.5em} \= \kill
+\gobblecr}{\end{tabbing}\unskip}
+
+
+\newenvironment{scheme}{
+  % Commands for scheme examples
+  \newcommand{\ev}{\>\>\>\evalsto}       % three tabs
+  \newcommand{\wev}{\>\>\>\>\evalsto}    % four tabs
+  \newcommand{\wwev}{\>\>\>\>\>\evalsto} % five tabs
+  \newcommand{\lev}{\\\>\evalsto}        % one tab
+  \newcommand{\unspecified}{{\em{}unspecified}}
+  \newcommand{\scherror}{{\em{}error}}
+  \setupcode
+  \small \cf \obeyspaces \myobeycr
+  \begin{tabbing}%
+\qquad \= \hspace*{4.5em} \= \hspace*{4.5em} \= \hspace*{4.5em} \= \hspace*{4.5em} \= \hspace*{4.5em} \= \+ \kill
+\gobblecr}{\end{tabbing}\unskip}
+
+\newcommand{\evalsto}{$\Longrightarrow$}
+
+%
+% The Proc Environment - arguments are:
+%
+% 1 - proc name 
+% 2 - formals list
+% 3 - return formal
+%
+\newenvironment{proc}[3]
+   {\bigskip\goodbreak
+   \noindent{\sf (#1{\sl #2})} \hfill {Scheme Procedure}\par{\indent
+   Returns: \ifthenelse{\equal{#3}{}}{\em unspecified}{\em #3}
+   }\par
+   \begin{list}{}{
+   \setlength{\leftmargin}{3ex}
+   \setlength{\listparindent}{0pt}
+   }\item[] 
+   \penalty 10000
+   }{
+   \end{list}
+   }
+
+
+%
+% The Method Environment - arguments are:
+%
+% 1 - proc name 
+% 2 - formals list
+% 3 - return formal
+%
+\newenvironment{method}[3]
+   {\medskip\goodbreak
+   \noindent{\sf (#1{\sl #2})} \hfill {Method}\par{\indent
+   Returns:    \ifthenelse{\equal{#3}{}}{\em unspecified}{\em #3}
+   }\par
+   \begin{list}{}{
+   \setlength{\leftmargin}{3ex}
+   \setlength{\listparindent}{0pt}
+   }\item[] 
+   \penalty 10000
+   }{
+   \end{list}
+   }
+
+
+%
+% The Class Environment - arguments are:
+%
+% 1 - class name
+% 2 - parent name
+% 3 - class type
+%
+\newenvironment{class}[3]
+   {\bigskip\bigskip\bigskip\bigskip\goodbreak
+    \noindent{\sf \cname{#1}}
+    \ifthenelse{\equal{#2}{}}{}{ (parent: \cname{#2})} 
+     \hfill {#3 Class}
+   \par
+   \begin{list}{}{
+   \setlength{\leftmargin}{3ex}
+   \setlength{\listparindent}{0pt}
+   }\item[] 
+   \penalty 10000
+   }{
+   \end{list}
+   }
+
+
+
+

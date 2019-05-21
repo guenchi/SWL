@@ -1,0 +1,16 @@
+include ..\..\config.make
+
+OBJECT = dispatch.so defint.so class.so
+
+all: $(prefix) $(prefix)\oop.boot
+
+$(prefix):
+	mkdir $(prefix)
+
+$(prefix)\oop.boot: class.ss defint.ss dispatch.ss build-script
+	$(Scheme) build-script
+	echo replace $(prefix)\oop.boot $(OBJECT) | $(Scheme) ..\..\nt\cat.ss
+
+clean:
+	echo $(OBJECT) build-script | $(Scheme) ..\..\nt\rm.ss
+

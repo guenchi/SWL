@@ -1,0 +1,7 @@
+	{ gsub(/@i{/, "{\\it ", $0); \
+	  gsub(/@s{/, "{\\tt \\frenchspacing ", $0); \
+	  gsub(/@b{/, "{\\bf ", $0); \
+	  gsub(/@t{/, "{\\tt ", $0); \
+	  gsub(/!/, "\\BANG ", $0); \
+	  gsub(/@sep/, "!", $0); \
+	printf "%s\n", $0 }

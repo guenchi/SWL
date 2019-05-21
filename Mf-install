@@ -1,0 +1,91 @@
+include config.make
+
+# location for swl executable script
+InstallBin=${InstallPrefix}/bin
+
+# location for swl library
+InstallLib=${InstallPrefix}/lib/swl${SWLVER}
+
+# location of swl shell script
+InstallScript=${InstallBin}/swl
+
+# Files are actually installed at ${TempRoot}${InstallPrefix}
+# This useful for testing the install process and for building
+# installation scripts
+TempRoot=
+
+Bin=$(TempRoot)$(InstallBin)
+Lib=$(TempRoot)$(InstallLib)
+Script=$(TempRoot)$(InstallScript)
+
+I=./installsh -o $(InstallOwner) -g $(InstallGroup)
+
+install: installlib installlibbin installbin installappsrc
+
+installlib:
+	$I -m 755 -d $(Lib)/lib
+	$I -m 444 lib/*.html lib/*.ss lib/*.gif lib/*.tcl $(Lib)/lib
+	$I -m 755 -d $(Lib)/lib/ref
+	$I -m 444 lib/ref/*.html $(Lib)/lib/ref
+	$I -m 755 -d $(Lib)/tutorial
+	$I -m 444 tutorial/*.ss tutorial/*.gif  $(Lib)/tutorial
+
+installlibbin:
+	$I -m 755 -d $(Lib)/$m
+	$I -m 555 lib/$m/swl.s? $(Lib)/$m
+	$I -m 444 lib/$m/swl.boot $(Lib)/$m/swl.boot
+	if [ "$(NOHEAP)" != "1" ] ; then \
+          echo "(exit 0)" | $(Scheme) -s+ $(Lib)/$m/swl.heap lib/$m/swl.boot ;\
+          chmod 444 $(Lib)/$m/swl.heap ;\
+        fi
+
+installbin:
+	$I -m 755 -d $(Bin)
+	/bin/rm -f $(Script)
+	echo "TCL_LIBRARY=$(TCL_LIBRARY)" > $(Script)
+	echo "TK_LIBRARY=$(TK_LIBRARY)" >> $(Script)
+	echo "SWL_ROOT=$(InstallLib)/lib" >> $(Script)
+	echo "SWL_LIBRARY=$(InstallLib)/$m" >> $(Script)
+	echo "export TCL_LIBRARY TK_LIBRARY SWL_ROOT SWL_LIBRARY" >> $(Script)
+	if [ "$(NOHEAP)" = "1" ] ; then \
+	  echo "exec $(Scheme) -b $(InstallLib)/$m/swl.boot" '$$*' >> $(Script) ;\
+        else \
+	  echo "exec $(Scheme) -h $(InstallLib)/$m/swl.heap" '$$*' >> $(Script) ;\
+        fi
+	chmod 555 $(Script)
+
+installappsrc:
+	$I -m 755 -d $(Lib)/apps
+	$I -m 444 apps/README $(Lib)/apps
+	$I -m 755 -d $(Lib)/apps/automata
+	$I -m 444 apps/automata/*.tm $(Lib)/apps/automata
+	$I -m 444 apps/automata/*.ss $(Lib)/apps/automata
+	$I -m 755 -d $(Lib)/apps/common/images
+	$I -m 444 apps/common/images/*.bmp $(Lib)/apps/common/images
+	$I -m 444 apps/common/*.ss $(Lib)/apps/common
+	$I -m 755 -d $(Lib)/apps/consbox
+	$I -m 444 apps/consbox/*.ss $(Lib)/apps/consbox
+	$I -m 755 -d $(Lib)/apps/design
+	$I -m 444 apps/design/*.ss $(Lib)/apps/design
+	$I -m 755 -d $(Lib)/apps/edit
+	$I -m 444 apps/edit/*.ss $(Lib)/apps/edit
+	$I -m 755 -d $(Lib)/apps/fileview
+	$I -m 444 apps/fileview/*.ss $(Lib)/apps/fileview
+	$I -m 755 -d $(Lib)/apps/graph
+	$I -m 444 apps/graph/*.ss $(Lib)/apps/graph
+	$I -m 755 -d $(Lib)/apps/htmlview
+	$I -m 444 apps/htmlview/*.ss $(Lib)/apps/htmlview
+	$I -m 755 -d $(Lib)/apps/inspector
+	$I -m 444 apps/inspector/*.ss $(Lib)/apps/inspector
+	$I -m 444 apps/inspector/help.txt $(Lib)/apps/inspector
+	$I -m 755 -d $(Lib)/apps/lecture
+	$I -m 444 apps/lecture/lecture.ss $(Lib)/apps/lecture
+	$I -m 444 apps/lecture/script9 $(Lib)/apps/lecture
+	$I -m 755 -d $(Lib)/apps/profview
+	$I -m 444 apps/profview/*.ss $(Lib)/apps/profview
+	$I -m 755 -d $(Lib)/apps/repl
+	$I -m 444 apps/repl/*.ss $(Lib)/apps/repl
+	$I -m 755 -d $(Lib)/apps/vinterp
+	$I -m 444 apps/vinterp/*.ss $(Lib)/apps/vinterp
+	$I -m 444 apps/vinterp/README $(Lib)/apps/vinterp
+

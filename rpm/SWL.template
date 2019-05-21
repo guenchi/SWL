@@ -1,0 +1,68 @@
+Summary: SWL: The Scheme Widget Library
+Name: SWL
+Version: {VERSION}
+Release: {RELEASE}
+# BuildRequires: ChezScheme = {SCHEMEVERSION}
+Requires: ChezScheme-runtime-{SCHEMEVERSION}
+License: distributable
+Vendor: Indiana University
+Group: Development/Languages
+Source: ./swl{VERSION}-src.tar.gz
+Packager: Cadence Research Systems <info@scheme.com>
+URL: http://www.scheme.com
+BuildRoot: %{_tmppath}/%{name}
+%description
+The Scheme Widget Library (SWL) is a free windowing and graphics package for
+Chez Scheme developed in the Indiana University Computer Science Department
+with support from the National Science Foundataion and Cadence Research
+Systems. It includes an object system for Scheme, a threaded windowing and
+graphics library, and various tools, including a window-based REPL
+(read-eval-print loop) window, a simple editor, a source-file viewer, and a
+document viewer.  SWL is based on Scriptics' Tcl/Tk system. 
+
+%prep
+# %setup option reminders: -n: name of source directory; -D: do not delete
+# directory before unpacking; -T: do not unpack automatically; -b <n>: do
+# unpack <n>'th source; -a unpack <n>'th source after cd'ing into the
+# source directory.
+%setup -T -b 0 -n swl{VERSION}
+
+%build
+make Scheme=${SCHEME:-/usr/bin/scheme}
+# make install-doc
+
+%install
+make install TempRoot=%{buildroot} Scheme=${SCHEME:-/usr/bin/scheme}
+
+%files
+%doc Notice
+# this may generate a duplicate entry
+# %doc /usr/lib/swl{VERSION}/lib/index.html
+%dir /usr/lib/swl{VERSION}
+%dir /usr/lib/swl{VERSION}/i3le
+%ghost /usr/bin/swl
+/usr/lib/swl{VERSION}/i3le/swl.boot
+/usr/lib/swl{VERSION}/i3le/swl.so
+/usr/lib/swl{VERSION}/lib
+/usr/lib/swl{VERSION}/tutorial
+/usr/lib/swl{VERSION}/apps
+
+%post
+InstallLib=/usr/lib/swl{VERSION}
+if [ -x /usr/bin/scheme ] ; then
+  Scheme=/usr/bin/scheme
+else
+  Scheme=/usr/bin/petite
+fi
+Script=/usr/bin/swl
+TCLVERSION=`echo "puts stdout [set tcl_version]" | tclsh`
+TCLLIB=`echo "puts stdout [set tcl_library]" | tclsh`
+TKLIB=`dirname ${TCLLIB}`/tk${TCLVERSION}
+echo "#!/bin/sh" > ${Script}
+echo "TCL_LIBRARY=${TCLLIB}" >> ${Script}
+echo "TK_LIBRARY=${TKLIB}" >> ${Script}
+echo "SWL_ROOT=${InstallLib}/lib" >> ${Script}
+echo "SWL_LIBRARY=${InstallLib}/i3le" >> ${Script}
+echo "export TCL_LIBRARY TK_LIBRARY SWL_ROOT SWL_LIBRARY" >> ${Script}
+echo "exec ${Scheme} -b ${InstallLib}/i3le/swl.boot \$*" >> ${Script}
+chmod 555 ${Script}

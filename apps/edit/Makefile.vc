@@ -1,0 +1,22 @@
+include ..\..\config.make
+
+edit: $(prefix) $(prefix)\edit.so
+
+$(prefix)\edit.so: $(prefix)\swl.heap build-script \
+                ..\common\scheme-text.ss \
+                ..\common\scrollframe.ss \
+                ..\common\fontmenu.ss \
+                ..\common\select-file.ss \
+                ..\common\warning-dialog.ss \
+                ..\common\auxio.ss \
+                ..\common\worrier.ss \
+                edit-text.ss edit.ss
+	..\..\swl - build-script
+	copy edit.so $(prefix)
+	del edit.so
+
+$(prefix):
+	mkdir $(prefix)
+
+clean:
+	echo $(prefix)\edit.so | $(Scheme) ..\..\nt\rm.ss

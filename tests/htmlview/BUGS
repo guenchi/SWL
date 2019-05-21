@@ -1,0 +1,5 @@
+* Rendering of html in new-viewer is not only ugly but incorrect (even for the
+  subset of html we target).  See, for example, tests/bad-inspect.html.
+  Inserting <p> tags before the <h3>'s at least fixes some of the boldface
+  problems, but makes the output even uglier by adding lots of vspace.
+

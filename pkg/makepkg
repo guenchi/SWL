@@ -1,0 +1,166 @@
+#!/bin/csh -f
+if ( $#argv != 4 ) then
+    echo "Usage: makepkg <scheme> <version> <machine-type> <release>"
+    echo "  e.g.: makepkg scheme 1.0a ppcosx 2"
+    exit 1
+endif
+
+if ( `id -u` != 0 ) then
+    echo "makepkg must be run as root (via su)"
+    exit 1
+endif
+
+set scheme = "$1"
+set version = $2
+set machine = $3
+set release = $4
+
+# use /tmp filesystem---current directory might be in a sparse
+# bundle, and can't create root files in sparse bundles
+set BUILDROOT = /tmp/swl${machine}${version}
+if ( -e ${BUILDROOT} ) then
+   echo -n "$BUILDROOT exists, remove? (y/n): "
+   if ( "$<" == "y" ) then
+      rm -rf ${BUILDROOT}
+   else
+      exit 1
+   endif
+endif
+/bin/mkdir -m 755 ${BUILDROOT}
+
+# create resources and root directories
+set RESOURCES = ${BUILDROOT}/resources
+/bin/mkdir -m 755 ${RESOURCES}
+/bin/mkdir -m 755 ${RESOURCES}/en.lproj
+set ROOT = ${BUILDROOT}/root
+/bin/mkdir -m 755 ${ROOT}
+
+# set pkgname
+set pkgname = swl${version}-${machine}-${release}
+
+# create Welcome.html
+cat << EOF > ${RESOURCES}/en.lproj/Welcome.html
+<html>
+<h3>SWL version ${version}</h3>
+<p>Copyright (c) 1993-`date +%Y` Oscar Waddell</p>
+<p>SWL provides a graphical interface for Chez Scheme and Petite Chez Scheme.</p>
+</html>
+EOF
+
+# create License.html
+cp License.html ${RESOURCES}/en.lproj/License.html
+chmod 644 ${RESOURCES}/en.lproj/License.html
+
+# create bin, lib, and man files
+( cd .. ; make Scheme="$scheme" install InstallGroup=wheel TempRoot=${ROOT} )
+
+# Replace swl shell script with one that opens swl.app so that we avoid
+# the "SetFrontProcess failed,-606" bug.
+cat << EOF > ${ROOT}/usr/bin/swl
+#!/bin/sh
+echo cd '"'\`pwd\`'"' > \${HOME}/.swlsourceme
+echo ARGS='"'\$*'"' >> \${HOME}/.swlsourceme
+open -a /Applications/swl.app
+EOF
+chmod 555 ${ROOT}/usr/bin/swl
+
+# create swl.app
+/bin/mkdir -p -m 755 ${ROOT}/Applications/swl.app/Contents/{MacOS,Resources}
+cat << EOF > ${ROOT}/Applications/swl.app/Contents/Info.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>CFBundleDevelopmentRegion</key>
+        <string>English</string>
+        <key>CFBundleDocumentTypes</key>
+        <array>
+            <dict>
+                <key>CFBundleTypeExtensions</key>
+                <array>
+                    <string>ss</string>
+                    <string>scm</string>
+                </array>
+                <key>CFBundleTypeIconFile</key>
+                <string>cs.icns</string>
+                <key>CFBundleTypeName</key>
+                <string>SCHEME Document</string>
+                <key>CFBundleTypeOSTypes</key>
+                <array>
+                    <string>SCHEME</string>
+                </array>
+                <key>CFBundleTypeRole</key>
+                <string>Viewer</string>
+            </dict>
+        </array>
+        <key>CFBundleExecutable</key>
+        <string>swl</string>
+        <key>CFBundleGetInfoString</key>
+        <string>SWL Version ${version}</string>
+        <key>CFBundleIconFile</key>
+            <string>cs.icns</string>
+        <key>CFBundleIdentifier</key>
+        <string>com.scheme.swl</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>6.0</string>
+        <key>CFBundleName</key>
+        <string>SWL</string>
+        <key>CFBundlePackageType</key>
+        <string>APPL</string>
+        <key>CFBundleShortVersionString</key>
+        <string>${version}</string>
+        <key>CFBundleSignature</key>
+        <string>SWL</string>
+        <key>CFBundleVersion</key>
+        <string>${version}</string>
+    </dict>
+</plist>
+EOF
+chmod 444 ${ROOT}/Applications/swl.app/Contents/Info.plist
+
+cat << EOF > ${ROOT}/Applications/swl.app/Contents/MacOS/swl
+#!/bin/sh
+TCL_LIBRARY=/Library/Frameworks/Tcl.framework/Resources/Scripts/
+TK_LIBRARY=/Library/Frameworks/Tk.framework/Resources/Scripts/
+SWL_ROOT=/usr/lib/swl${version}/lib
+SWL_LIBRARY=/usr/lib/swl${version}/${machine}
+export TCL_LIBRARY; export TK_LIBRARY; export SWL_LIBRARY; export SWL_ROOT
+ARGS=""
+if [ -f \${HOME}/.swlsourceme ]; then
+   . \${HOME}/.swlsourceme
+   rm \${HOME}/.swlsourceme
+fi
+# echo "" provides a nonempty file so that tk won't provide unwanted console
+cd \${HOME}/Desktop
+if [ -f /usr/bin/scheme ]; then
+  echo "" | exec /usr/bin/scheme -b /usr/lib/swl${version}/${machine}/swl.boot \$ARGS
+else
+  exec "" | /usr/bin/petite -b /usr/lib/swl${version}/${machine}/swl.boot \$ARGS
+fi
+EOF
+chmod 555 ${ROOT}/Applications/swl.app/Contents/MacOS/swl
+
+echo -n "APPLSWL" > ${ROOT}/Applications/swl.app/Contents/PkgInfo
+chmod 444 ${ROOT}/Applications/swl.app/Contents/PkgInfo
+cp cs.icns ${ROOT}/Applications/swl.app/Contents/Resources/cs.icns
+chmod 444 ${ROOT}/Applications/swl.app/Contents/Resources/cs.icns
+
+# Build the package
+/Developer/usr/bin/packagemaker\
+ --root ${ROOT}\
+ --out ${BUILDROOT}/${pkgname}.pkg\
+ --title "Scheme Widget Library"\
+ --verbose\
+ --version ${version}\
+ --target 10.3\
+ --filter "/\....*"\
+ --root-volume-only\
+ --domain system\
+ --install-to /\
+ --resources ${RESOURCES}\
+ --id com.scheme.swl
+
+(cd ${BUILDROOT} ; tar -czf - ${pkgname}.pkg ) > ${pkgname}.pkg.tar.gz
+chown ${SUDO_USER} ${pkgname}.pkg.tar.gz
+
+/bin/rm -rf ${BUILDROOT}

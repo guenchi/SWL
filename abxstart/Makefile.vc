@@ -1,0 +1,26 @@
+NODEBUG=1
+TARGETOS=BOTH
+
+!include <win32.mak>
+include ..\config.make
+
+cdebug = $(cdebug) -Oy-
+
+all: abxstart.exe
+	copy abxstart.exe $(prefix)
+
+#
+# Implicit rules
+#
+
+{}.c{}.obj:
+	$(cc) $(cdebug) $(cflags) $(cvars) -I. $<
+
+abxstart.obj: abxstart.h
+
+abxstart.exe: abxstart.obj
+	$(link) $(linkdebug) $(guilflags) $(*).obj $(guilibs)
+
+clean:
+	@if exist abxstart.obj del abxstart.obj
+	@if exist abxstart.exe del abxstart.exe

@@ -1,0 +1,67 @@
+\def\currentfile{\currentoutputfile}
+\def\separator{\ifhtml \raw{<hr>} \fi}
+
+% documentation printers are responsible for adding the \entryheader
+\def\swlapi#1#2#3{\formdef{#2}{#1}{#3}}
+
+% NOTE:  the blank line in this definition is essential given the current
+%        definition of \endentryheader.
+% I might be able to use a \par if I knew more about this...
+\def\ret#1{\returns #1 \endentryheader
+
+\noindent}
+% NOTE:  the blank line above is essential given current def of \endentryheader
+
+%%%%% latex versions
+\iflatex
+% These should be ok since \def's now shadow builtins.
+\def\bf#1{{\raw{\bf} #1}}
+\def\tt#1{{\raw{\tt} #1}}
+\def\noindent{\raw{\noindent}}
+\def\raggedright{\raw{\raggedright}}
+\def\smallskip{\raw{\smallskip}}
+
+\def\methods#1{
+ \raw{\par}
+ \smallskip\noindent\bf{Methods:}
+ \raw{\begin{list}{}\item\raggedright} #1 \raw{\end{list}}
+ 
+}
+
+\def\classes#1{
+ \raw{\par\begin{list}{}\item\raggedright}\bf{classes:} #1 \raw{\end{list}}
+}
+
+\def\methodlink#1{\scheme{#1}}
+\def\classlink#1{\scheme{#1}}
+
+% \scheme in LaTeX gives wong size in header
+\def\tutorial#1{Using \tt{#1}} 
+
+\fi
+
+%%%%% HTML versions
+\ifhtml
+% These should be ok since \def's now shadow builtins.
+\def\bf#1{\raw{<b>}#1\raw{</b>}}
+\def\tt#1{\raw{<code>}#1\raw{</code>}}
+\def\noindent{}
+\def\raggedright{}
+\def\smallskip{\raw{<p>}}
+
+\def\methods#1{
+ \smallskip\noindent\bf{Methods:}
+ \raw{<menu>}#1\raw{</menu>}
+}
+
+\def\classes#1{
+ \raw{<menu>}\bf{classes:} #1\raw{</menu>}
+}
+
+\def\methodlink#1{\scheme{#1} (\ref{#1})}
+\def\classlink#1{\scheme{#1} (\ref{#1})}
+
+% \scheme in LaTeX gives wong size in header
+\def\tutorial#1{Using \scheme{#1}}
+\fi
+

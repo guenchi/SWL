@@ -1,0 +1,1 @@
+(define swl:Scheme "/usr/local/bin/scheme")      (define prefix "lib")      (set! swl:version "1.3")      (optimize-level 2)      (quote (compile-profile #f))      (generate-inspector-information #f)

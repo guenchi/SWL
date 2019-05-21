@@ -1,0 +1,64 @@
+Scheme Widget Library
+Copyright (c) 1998 Oscar Waddell
+
+See the file "Notice" for information on usage and redistribution
+of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+Building
+  On most system, SWL can be built by typing 'make' in this directory. 
+  Under Windows, 'make' runs ./make.bat, which in turn runs
+  'make -f Makefile.vc'.  SWL is designed to run under nonthreaded
+  versions of Chez Scheme and has not been tested under threaded versions.
+  SWL cannot be built with Petite Chez Scheme, since the compiler is
+  required.
+
+Console
+
+  SWL starts up a read-eval-print loop (repl) after loading the files
+  specified on the command line.  To get a new concurrent repl, invoke
+  swl:repl without arguments or click on SWL -> New Repl.  The repl
+  source is in the apps/repl directory.
+
+  If you do not want a repl, you should arrange for one of the files
+  provided as command-line arguments to invoke swl:event-loop without
+  arguments after performing application-specific initialization.
+
+Environment variables
+
+  When SWL is built using shared libraries, the SWL_LIBRARY environment
+  variable can be used to provide the absolute path of the directory
+  containing the "swl" shared library (swl.so, swl.sl, or swl.dll).  If
+  you change the value of this environment variable, comment out the
+  definition of SWL_LIBRARY in the "swl" script.
+
+Incremental saved heaps
+
+  To save incremental application heaps it is currently necessary to start
+  SWL without initializing the graphics library and thread system.  This
+  is done by passing the "-" flag on the command line.  If present, "-"
+  must appear as the first argument following the optional "-s<n> <name>"
+  or "-h <name>" arguments.  SWL can be initialized later via swl:startup
+  which has the same interface as the value of the scheme-start parameter.
+  This initialization is performed automatically when "-" is not supplied.
+  
+  For example, to save an incremental heap call foo.heap type:
+       % swl -s2 foo.heap -
+
+  The base SWL heap is saved at level 1.
+
+Examples
+
+  A set of small tutorial programs can be found in the tutorial
+  subdirectory.  To run, type:
+       % cd tutorial
+       % ../swl guide.ss
+  An set of extended examples are in subdirectories of the apps directory.
+  See the file apps/README for a description of the applications.  Most
+  may be run from the subdirectory via ../../swl <appname>.ss.  To run
+  the graphs example, for instance, type:
+       % cd apps/graph
+       % ../../swl graph.ss
+
+  The SWL system undergoes frequent modifications, and the examples are
+  not always up-to-date.  Contact owaddell@cs.indiana.edu if you find
+  that an example does not run properly.

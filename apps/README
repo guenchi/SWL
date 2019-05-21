@@ -1,0 +1,19 @@
+This directory contains sketches of several SWL applications.
+All these things are works in progress.
+The edit, repl, and htmlview files are already loaded when you start SWL.
+
+automata   -  first draft of a tool for editing and running turing machines
+common     -  useful library classes shared by the apps (put extensions here)
+consbox    -  box-and-pointer diagrams for pairs (only acyclic at present)
+design     -  an extended editor for structured editing of programs
+edit       -  simple text editor
+fileview   -  simple file viewer that exploits source-object correlation
+graph      -  a simple graph editor that should be abstracted w/ automata
+htmlview   -  HTML browser
+inspector  -  graphical inspector
+lecture    -  simple lecture presentation tool used locally
+profview   -  browser for profile data
+repl       -  read-eval-print loop with paren balancing and history
+vinterp    -  prototype visual interpreter, provides single stepping, etc.
+              requires modified Chez Scheme interpreter (not included)
+

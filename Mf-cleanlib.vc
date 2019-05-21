@@ -1,0 +1,6 @@
+include config.make
+
+cleanlib: config.make
+	cd $(prefix)\..
+	del /q /f $(m)
+	rmdir $(m)
