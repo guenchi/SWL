@@ -1,6 +1,8 @@
 # Scheme Widget Library
 
-The Scheme Widget Library (SWL) is no longer being maintained by Indiana University Computer Science Department, National Science Foundation and Cadence Research Systems.  [Source Code](https://www.scheme.com/csv8.4/swl1.3-src.tar.gz)
+The Scheme Widget Library (SWL) is no longer being maintained by Indiana University Computer Science Department, National Science Foundation and Cadence Research Systems.
+
+[Main Page](https://www.scheme.com/swl.html) [Source Code](https://www.scheme.com/csv8.4/swl1.3-src.tar.gz)
 
 I upload it in here for the reasons below:
 
